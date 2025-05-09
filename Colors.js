@@ -7,6 +7,7 @@ export const themeColors = {
     sunday: '#AA5353',
     saturday: '#212CE5',
     tag: '#E6E6E6',
+    redBotton: '#FFEFEF',
 }
 
 export const categories = {
