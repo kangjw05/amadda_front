@@ -4,7 +4,7 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, FlatList } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
-import GroupListScreenStyles from './GroupListScreenStyles';
+import styles from './GroupListScreenStyles';
 
 const GroupListScreen = () => {
     return (
