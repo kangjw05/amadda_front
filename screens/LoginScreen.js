@@ -4,13 +4,13 @@ import { useNavigation, useRoute } from "@react-navigation/native";
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions, FlatList } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
-import LoginScreenStyles from './LoginScreenStyles';
+import styles from './LoginScreenStyles';
 
 const LoginScreen = () => {
     return (
-        <View>
-
-        </View>
+    <View>
+      
+    </View>
     );
 };
 
