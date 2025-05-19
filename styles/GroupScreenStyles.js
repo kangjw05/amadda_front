@@ -1,8 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
-const GroupScreenStyles = StyleSheet.create({
-
-});
+const GroupScreenStyles = StyleSheet.create({});
 
 export default GroupScreenStyles;
