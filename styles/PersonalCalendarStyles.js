@@ -1,6 +1,6 @@
 import { StyleSheet } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
-const SettingScreenStyles = StyleSheet.create({});
+const PersonalCalendarStyles = StyleSheet.create({});
 
-export default SettingScreenStyles;
+export default PersonalCalendarStyles;
