@@ -16,7 +16,7 @@ import { themeColors, categories, groups } from "../Colors";
 
 import styles from "../styles/LoginScreenStyles";
 
-const LoginScreen = () => {
+const LoginScreen = ({ onLogin }) => {
   return (
     <View>
       <View style={styles.container_logo}>
@@ -43,7 +43,10 @@ const LoginScreen = () => {
       <View style={styles.container_login2}>
         <TouchableOpacity
           style={styles.Button}
-          onPress={() => console.log("로그인")}
+          onPress={() => {
+            console.log("로그인");
+            onLogin();
+          }}
         >
           <Text style={styles.ButtonText}>로그인</Text>
         </TouchableOpacity>
