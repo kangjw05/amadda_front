@@ -23,7 +23,7 @@ const styles = StyleSheet.create({
   },
   headerText: {
     color: themeColors.text,
-    fontSize: 27,
+    fontSize: 25,
     fontWeight: 400,
   },
 });
