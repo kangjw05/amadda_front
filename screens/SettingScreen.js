@@ -12,9 +12,14 @@ import {
 import { themeColors, categories, groups } from "../Colors";
 
 import styles from "../styles/SettingScreenStyles";
+import Header from "../components/header";
 
 const SettingScreen = () => {
-  return <View></View>;
+  return (
+    <View>
+      <Header />
+    </View>
+  );
 };
 
 export default SettingScreen;
