@@ -10,14 +10,16 @@ import {
   FlatList,
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
-import Header from "../components/header";
 
 import styles from "../styles/PersonalCalendarStyles";
+import Header from "../components/header";
+import Calendar from "../components/calendar";
 
 const PersonalCalendar = () => {
   return (
     <View style={styles.container}>
       <Header />
+      <Calendar />
     </View>
   );
 };
