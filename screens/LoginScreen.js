@@ -18,7 +18,7 @@ import styles from "../styles/LoginScreenStyles";
 
 const LoginScreen = ({ onLogin }) => {
   return (
-    <View>
+    <View style={styles.fullcontainer}>
       <View style={styles.container_logo}>
         <Image source={require("../assets/Tab/Logo.png")} style={styles.logo} />
         <Text style={styles.logo_name}>Amadda</Text>
