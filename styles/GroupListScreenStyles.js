@@ -6,7 +6,8 @@ const GroupListScreenStyles = StyleSheet.create({
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
-    padding: 16,
+    paddingHorizontal: 6,
+    paddingVertical: 16,
     borderBottomColor: themeColors.highlight,
     borderBottomWidth: 1,
   },
@@ -14,14 +15,30 @@ const GroupListScreenStyles = StyleSheet.create({
     flex: 1,
     fontSize: 30,
     padding: 8,
+    marginLeft: 10,
     color: themeColors.highlight,
   },
   addButton: {
-    padding: 8,
+    padding: 4,
+    marginLeft: 5,
+  },
+  searchIcon: {
+    width: 24,
+    height: 24,
+    marginTop: 4,
+    tintColor: themeColors.highlight,
   },
   addButtonText: {
-    fontSize: 30,
+    fontSize: 35,
     color: themeColors.highlight,
+  },
+  searchInput: {
+    height: 40,
+    width: "100%",
+    borderBottomColor: themeColors.highlight,
+    borderBottomWidth: 1,
+    marginRight: 5,
+    paddingHorizontal: 10, 
   },
   modalOverlay: {
     flex: 1,
@@ -148,6 +165,18 @@ const GroupListScreenStyles = StyleSheet.create({
     fontSize: 16,
     color: themeColors.highlight,
     marginVertical: 4,
+  },
+  leaveButton: {
+    borderBottomColor: themeColors.sunday,
+    borderBottomWidth: 2,
+    padding: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: 10,
+  },
+  leaveButtonText: {
+    color: themeColors.sunday,
+    fontSize: 16,
   },
 });
 
