@@ -7,10 +7,13 @@ const GroupListScreenStyles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     padding: 16,
+    borderBottomColor: themeColors.highlight,
+    borderBottomWidth: 1,
   },
   headText: {
     flex: 1,
     fontSize: 30,
+    padding: 8,
     color: themeColors.highlight,
   },
   addButton: {
@@ -65,7 +68,7 @@ const GroupListScreenStyles = StyleSheet.create({
   },
   inputBackground: {
     width: "100%",
-    height: 50,
+    height: 54.5,
     justifyContent: "center",
     alignItems: "center",
     marginVertical: 6,
@@ -73,6 +76,8 @@ const GroupListScreenStyles = StyleSheet.create({
   },
   imageStyle: {
     borderRadius: 7,
+    overflow: "hidden",
+    resizeMode: "contain",
   },
   copyIcon: {
     width: 24,
@@ -98,13 +103,51 @@ const GroupListScreenStyles = StyleSheet.create({
   actionButton: {
     width: "25%",
     backgroundColor: themeColors.highlight,
-    borderRadius: 6,
+    borderRadius: 10,
     padding: 12,
     alignItems: "center",
   },
   actionButtonText: {
     color: "white",
     fontWeight: "bold",
+  },
+  groupItem: {
+    flex: 0.95,
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: themeColors.highlight,
+    marginHorizontal: 10,
+  },
+  groupInfo: {
+    flex: 1,
+    marginLeft: 10,
+  },
+  groupIconContainer: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: "center",
+    alignItems: "center",
+    overflow: "hidden",
+    marginRight: 10,
+  },
+  groupIcon: {
+    width: "50%",
+    height: "50%",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  groupName: {
+    fontSize: 20,
+    color: themeColors.highlight,
+    marginVertical: 4,
+  },
+  groupCreator: {
+    fontSize: 16,
+    color: themeColors.highlight,
+    marginVertical: 4,
   },
 });
 

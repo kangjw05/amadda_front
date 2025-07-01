@@ -7,6 +7,7 @@ import {
   Modal, 
   TextInput, 
   Dimensions,
+  Image,
   TouchableWithoutFeedback,
   FlatList,
   ImageBackground,
@@ -15,6 +16,7 @@ import * as Clipboard from "expo-clipboard";
 
 import styles from "../styles/GroupListScreenStyles";
 import Header from "../components/header";
+import { groups } from "../Colors";
 
 function generateRandomCode(length = 6) {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
@@ -33,7 +35,9 @@ const GroupListScreen = () => {
   const [groupCode, setGroupCode] = useState(generateRandomCode());
   const [groupPassword, setGroupPassword] = useState("");
   const handleCopyCode = () => {
-    Clipboard.setStringAsync(groupCode);}
+    Clipboard.setStringAsync(groupCode);
+  }
+  const [groupList, setGroupList] = useState([]); // 그룹 목록을 저장할 상태
 
   const openModal = () => {
     setGroupCode(generateRandomCode());
@@ -50,6 +54,14 @@ const GroupListScreen = () => {
   const handleCreateGroup = () => {
     // 그룹 생성 로직
     console.log("그룹 생성:", groupName);
+    const newGroup = {
+      name: groupName,
+      creator: "마정우",
+      code: groupCode,
+      password: groupPassword,
+      colorKey: "group10",
+    };
+    setGroupList([...groupList, newGroup]); // 그룹 목록에 추가
     closeModal();
   };
 
@@ -209,6 +221,31 @@ const GroupListScreen = () => {
         </View>
         </TouchableWithoutFeedback>
       </Modal>
+      <FlatList
+        data={groupList}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => {
+          const colorTheme = groups[item.colorKey];
+          return (
+            <TouchableOpacity style={styles.groupItem}>
+              <View style={[styles.groupIconContainer, { backgroundColor: colorTheme.checkbox }]}>
+                <Image
+                  source={require("../assets/images/groupIcon.png")} 
+                  style={styles.groupIcon}
+                  resizeMode="contain"
+                >
+                </Image>
+              </View>
+              <View style={styles.groupInfo}>
+                <Text style={[styles.groupName, { color: colorTheme.text }]}>{item.name}</Text>
+                <Text style={[styles.groupCreator, { color: colorTheme.text }]}>{item.creator}</Text>
+              </View>
+              <View style={styles.groupCodeContainer}>
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        />
     </View>
   );
 };
