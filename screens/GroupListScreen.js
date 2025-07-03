@@ -81,7 +81,6 @@ const GroupListScreen = () => {
     // 그룹 생성 로직
     console.log("그룹 생성:", groupName);
     const newGroup = {
-      id: Date.now().toString(),
       name: groupName,
       creator: "마정우",
       code: groupCode,
@@ -140,7 +139,7 @@ const GroupListScreen = () => {
         {text: "나가기",
           style: "destructive",
           onPress: () => {
-            const updatedGroups = groupList.filter(g => g.id !== group.id);
+            const updatedGroups = groupList.filter(g => g.code !== group.code);
             setGroupList(updatedGroups);
             saveGroupsToStorage(updatedGroups);
           }
@@ -331,7 +330,7 @@ const GroupListScreen = () => {
           item.name.toLowerCase().includes(searchText.toLowerCase()) ||
           item.creator.toLowerCase().includes(searchText.toLowerCase())
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.code}
         renderItem={({ item }) => {
           const colorTheme = groups[item.colorKey];
           return (
