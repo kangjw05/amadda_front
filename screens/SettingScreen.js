@@ -67,6 +67,7 @@ const SettingScreen = () => {
       </View>
 
       <View style={styles.separator} />
+    </View>
   );
 };
 
