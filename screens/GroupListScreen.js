@@ -238,6 +238,7 @@ const GroupListScreen = () => {
                   value={groupName}
                   onChangeText={setGroupName}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
@@ -252,6 +253,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
@@ -293,6 +295,7 @@ const GroupListScreen = () => {
                 <TextInput
                   onChangeText={setGroupCode}
                   style={styles.input}
+                  maxLength={6}
                 />
                 </ImageBackground>
                 </View>
@@ -307,6 +310,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
