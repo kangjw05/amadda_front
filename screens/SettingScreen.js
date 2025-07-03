@@ -140,6 +140,14 @@ const SettingScreen = () => {
   ]);
 
   const openCategoryModal = () => {
+    if (categoriesList.length >= 20) {
+      Alert.alert(
+        "카테고리 제한", 
+        "최대 20개의 카테고리만 추가할 수 있습니다.",
+      [{ text: "확인" }]
+      );
+      return;
+    }
     setNewCategoryName("");
     setSelectedColorKey("category1");
     setIsCategoryModalVisible(true);
