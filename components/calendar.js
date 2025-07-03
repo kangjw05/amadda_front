@@ -88,7 +88,6 @@ const Calendar = () => {
           })}
         </View>
       </View>
-
       <FlatList
         horizontal
         pagingEnabled
