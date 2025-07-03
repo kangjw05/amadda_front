@@ -72,6 +72,13 @@ const SettingScreen = () => {
     }
   };
 
+  const getMaskedPassword = (password) => {
+    if (!password) return "";
+    if (password.length <= 3) return "*".repeat(password.length);
+    const visible = password.slice(0, 3);
+    const hidden = "*".repeat(password.length - 3);
+    return visible + hidden;
+  };
 
   const openPasswordModal = () => {
     setPassword("");
@@ -234,23 +241,9 @@ const SettingScreen = () => {
           <View style={styles.inputRow}>
             <Text style={styles.label}>비밀번호</Text>
             <View style={styles.inputContainer}>
-            {isPasswordVisible ? (
-          // 표시 모드
-            <Text style={styles.input}>{accountData.password}</Text>
-            ) : (
-              // 숨김 모드 (****)
-              <Text style={styles.input}>
-                {"*".repeat(accountData.password.length)}
-              </Text>
-            )}
-            <TouchableWithoutFeedback 
-            onPressIn={() => setIsPasswordVisible(true)}
-            onPressOut={() => setIsPasswordVisible(false)}>
-              <Image
-                source={require("../assets/images/eyeIcon.png")}
-                style={styles.icon}
-              />
-            </TouchableWithoutFeedback>
+            <Text style={styles.input}>
+              {getMaskedPassword(accountData.password)}
+            </Text>
             <TouchableOpacity onPress={() => openPasswordModal()}>
               <Image
                 source={require("../assets/images/pencilIcon.png")}
@@ -508,6 +501,19 @@ const SettingScreen = () => {
               </View>
             </TouchableWithoutFeedback>
           </Modal>
+          <TouchableOpacity style={styles.information}>
+            <View style={styles.leftpannel}>
+              <Image
+                source={require("../assets/images/lockIcon.png")}
+                style={styles.lockIcon}
+              />
+            </View>
+            <View style={styles.rightpannel}>
+              <View style={styles.inputRow}>
+                <Text style={styles.findPWFont}>비밀번호 찾기</Text>
+            </View>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.information}>
             <View style={styles.leftpannel}>
               <Image

@@ -229,7 +229,23 @@ const SettingScreenStyles = StyleSheet.create({
     height: 24,
     tintColor: themeColors.highlight,
   },
+  findPWFont: {
+    flex: 1,
+    fontSize: 16,
+    color: themeColors.highlight,
+    marginVertical: 10,
+    textAlign: "center",
+  },
+  lockIcon: {
+    width: 28,
+    height: 28,
+    marginHorizontal: 5,
+    marginVertical: 10,
+    resizeMode: "contain",
+    tintColor: themeColors.highlight, 
+  },
   outText: {
+    flex: 1,
     fontSize: 16,
     color: "#CB3D24",
     marginVertical: 10,
