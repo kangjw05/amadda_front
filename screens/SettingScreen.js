@@ -6,13 +6,12 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Modal,
-  Dimensions,
   FlatList,
   Alert,
+  ScrollView
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -75,7 +74,9 @@ const SettingScreen = () => {
 
 
   const openPasswordModal = () => {
-    setTempPassword(password);
+    setPassword("");
+    setTempPassword("");
+    setCheckPassword("");
     setisEditingPassword(true);
   };
 
@@ -185,7 +186,9 @@ const SettingScreen = () => {
       <View style={styles.setting}>
         <Text style={styles.font}>설정</Text>
       </View>
-
+      <ScrollView
+        style={{ flex: 1, backgroundColor: themeColors.bg }}
+        contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={styles.information}>
         <View style={styles.leftpannel}>
           <Image
@@ -201,12 +204,14 @@ const SettingScreen = () => {
             {isEditingAccount ? (
                 <TextInput
                   placeholder={tempAccount}
+                  value={account}
                   onChangeText={setAccount}
                   onBlur={saveAccount}
                   autoFocus
                   style={styles.input}
                   maxLength={16}
                 />
+
               ) : (
                 <Text style={styles.input}>{accountData.account}</Text>
               )}
@@ -273,27 +278,30 @@ const SettingScreen = () => {
             <View style={styles.inputContainer}>
               <TextInput
                 placeholder="현재 비밀번호"
+                value={password}
                 onChangeText={setPassword}
                 style={styles.modalInput}
-                maxLength={16}
+                maxLength={20}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 placeholder="새 비밀번호"
+                value={tempPassword}
                 onChangeText={setTempPassword}
                 style={styles.modalInput}
-                maxLength={16}
+                maxLength={20}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호 확인</Text>
             <View style={styles.inputContainer}>
               <TextInput
                 placeholder="새 비밀번호 확인"
+                value={checkPassword}
                 onChangeText={setCheckPassword}
                 style={styles.modalInput}
-                maxLength={16}
+                maxLength={20}
               />
               {tempPassword !== checkPassword || tempPassword === "" || checkPassword === "" ? (
                 <Image
@@ -385,9 +393,8 @@ const SettingScreen = () => {
                       onChangeText={setNewCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
-                      maxLength={20}
+                      maxLength={16}
                     />
-
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                     <View style={styles.colorGrid}>
                     {Object.keys(categories).map((key) => (
@@ -455,9 +462,8 @@ const SettingScreen = () => {
                       onChangeText={setEditingCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
-                      maxLength={20}
+                      maxLength={16}
                     />
-
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                     <View style={styles.colorGrid}>
                       {Object.keys(categories).map((key) => (
@@ -529,6 +535,7 @@ const SettingScreen = () => {
               </View>
             </View>
           </TouchableOpacity>
+        </ScrollView>
     </View>
   );
 };
