@@ -205,6 +205,7 @@ const SettingScreen = () => {
                   onBlur={saveAccount}
                   autoFocus
                   style={styles.input}
+                  maxLength={16}
                 />
               ) : (
                 <Text style={styles.input}>{accountData.account}</Text>
@@ -274,6 +275,7 @@ const SettingScreen = () => {
                 placeholder="현재 비밀번호"
                 onChangeText={setPassword}
                 style={styles.modalInput}
+                maxLength={16}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호</Text>
@@ -282,6 +284,7 @@ const SettingScreen = () => {
                 placeholder="새 비밀번호"
                 onChangeText={setTempPassword}
                 style={styles.modalInput}
+                maxLength={16}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호 확인</Text>
@@ -290,6 +293,7 @@ const SettingScreen = () => {
                 placeholder="새 비밀번호 확인"
                 onChangeText={setCheckPassword}
                 style={styles.modalInput}
+                maxLength={16}
               />
               {tempPassword !== checkPassword || tempPassword === "" || checkPassword === "" ? (
                 <Image
@@ -381,6 +385,7 @@ const SettingScreen = () => {
                       onChangeText={setNewCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
+                      maxLength={20}
                     />
 
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
@@ -450,6 +455,7 @@ const SettingScreen = () => {
                       onChangeText={setEditingCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
+                      maxLength={20}
                     />
 
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
