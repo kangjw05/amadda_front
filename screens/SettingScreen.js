@@ -72,6 +72,13 @@ const SettingScreen = () => {
     }
   };
 
+  const getMaskedPassword = (password) => {
+    if (!password) return "";
+    if (password.length <= 3) return "*".repeat(password.length);
+    const visible = password.slice(0, 3);
+    const hidden = "*".repeat(password.length - 3);
+    return visible + hidden;
+  };
 
   const openPasswordModal = () => {
     setPassword("");
@@ -133,6 +140,14 @@ const SettingScreen = () => {
   ]);
 
   const openCategoryModal = () => {
+    if (categoriesList.length >= 20) {
+      Alert.alert(
+        "카테고리 제한", 
+        "최대 20개의 카테고리만 추가할 수 있습니다.",
+      [{ text: "확인" }]
+      );
+      return;
+    }
     setNewCategoryName("");
     setSelectedColorKey("category1");
     setIsCategoryModalVisible(true);
@@ -234,23 +249,9 @@ const SettingScreen = () => {
           <View style={styles.inputRow}>
             <Text style={styles.label}>비밀번호</Text>
             <View style={styles.inputContainer}>
-            {isPasswordVisible ? (
-          // 표시 모드
-            <Text style={styles.input}>{accountData.password}</Text>
-            ) : (
-              // 숨김 모드 (****)
-              <Text style={styles.input}>
-                {"*".repeat(accountData.password.length)}
-              </Text>
-            )}
-            <TouchableWithoutFeedback 
-            onPressIn={() => setIsPasswordVisible(true)}
-            onPressOut={() => setIsPasswordVisible(false)}>
-              <Image
-                source={require("../assets/images/eyeIcon.png")}
-                style={styles.icon}
-              />
-            </TouchableWithoutFeedback>
+            <Text style={styles.input}>
+              {getMaskedPassword(accountData.password)}
+            </Text>
             <TouchableOpacity onPress={() => openPasswordModal()}>
               <Image
                 source={require("../assets/images/pencilIcon.png")}
@@ -508,6 +509,19 @@ const SettingScreen = () => {
               </View>
             </TouchableWithoutFeedback>
           </Modal>
+          <TouchableOpacity style={styles.information}>
+            <View style={styles.leftpannel}>
+              <Image
+                source={require("../assets/images/lockIcon.png")}
+                style={styles.lockIcon}
+              />
+            </View>
+            <View style={styles.rightpannel}>
+              <View style={styles.inputRow}>
+                <Text style={styles.findPWFont}>비밀번호 찾기</Text>
+            </View>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity style={styles.information}>
             <View style={styles.leftpannel}>
               <Image
