@@ -6,13 +6,12 @@ import {
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
   TouchableWithoutFeedback,
   Modal,
-  Dimensions,
   FlatList,
   Alert,
+  ScrollView
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -75,7 +74,9 @@ const SettingScreen = () => {
 
 
   const openPasswordModal = () => {
-    setTempPassword(password);
+    setPassword("");
+    setTempPassword("");
+    setCheckPassword("");
     setisEditingPassword(true);
   };
 
@@ -185,7 +186,9 @@ const SettingScreen = () => {
       <View style={styles.setting}>
         <Text style={styles.font}>설정</Text>
       </View>
-
+      <ScrollView
+        style={{ flex: 1, backgroundColor: themeColors.bg }}
+        contentContainerStyle={{ paddingBottom: 20 }}>
       <View style={styles.information}>
         <View style={styles.leftpannel}>
           <Image
@@ -550,6 +553,7 @@ const SettingScreen = () => {
               </View>
             </View>
           </TouchableOpacity>
+        </ScrollView>
     </View>
   );
 };
