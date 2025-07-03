@@ -205,14 +205,11 @@ const SettingScreen = () => {
                 <TextInput
                   placeholder={tempAccount}
                   value={account}
-                  onChangeText={(text) => {
-                    if (text.length <= 16) {
-                      setAccount(text);
-                    }
-                  }}
+                  onChangeText={setAccount}
                   onBlur={saveAccount}
                   autoFocus
                   style={styles.input}
+                  maxLength={16}
                 />
 
               ) : (
@@ -282,12 +279,9 @@ const SettingScreen = () => {
               <TextInput
                 placeholder="현재 비밀번호"
                 value={password}
-                onChangeText={(text) => {
-                  if (text.length <= 20) {
-                    setPassword(text);
-                  }
-                }}
+                onChangeText={setPassword}
                 style={styles.modalInput}
+                maxLength={20}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호</Text>
@@ -295,12 +289,9 @@ const SettingScreen = () => {
               <TextInput
                 placeholder="새 비밀번호"
                 value={tempPassword}
-                onChangeText={(text) => {
-                  if (text.length <= 20) {
-                    setTempPassword(text);
-                  }
-                }}
+                onChangeText={setTempPassword}
                 style={styles.modalInput}
+                maxLength={20}
               />
             </View>
             <Text style={styles.modalLabel}>새 비밀번호 확인</Text>
@@ -308,12 +299,9 @@ const SettingScreen = () => {
               <TextInput
                 placeholder="새 비밀번호 확인"
                 value={checkPassword}
-                onChangeText={(text) => {
-                  if (text.length <= 20) {
-                    setCheckPassword(text);
-                  }
-                }}
+                onChangeText={setCheckPassword}
                 style={styles.modalInput}
+                maxLength={20}
               />
               {tempPassword !== checkPassword || tempPassword === "" || checkPassword === "" ? (
                 <Image
@@ -402,13 +390,10 @@ const SettingScreen = () => {
                     <Text style={styles.categoryModalLabel}>카테고리 이름</Text>
                     <TextInput
                       value={newCategoryName}
-                      onChangeText={(text) => {
-                        if (text.length <= 16) {
-                          setNewCategoryName(text);
-                        }
-                      }}
+                      onChangeText={setNewCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
+                      maxLength={16}
                     />
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                     <View style={styles.colorGrid}>
@@ -474,13 +459,10 @@ const SettingScreen = () => {
                     <Text style={styles.categoryModalLabel}>카테고리 이름</Text>
                     <TextInput
                       value={editingCategoryName}
-                      onChangeText={(text) => {
-                        if (text.length <= 16) {
-                          setEditingCategoryName(text);
-                        }
-                      }}
+                      onChangeText={setEditingCategoryName}
                       placeholder="카테고리 이름"
                       style={styles.categoryModalInput}
+                      maxLength={16}
                     />
                     <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                     <View style={styles.colorGrid}>
