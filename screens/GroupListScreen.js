@@ -167,7 +167,7 @@ const GroupListScreen = () => {
             value={searchText}
             onChangeText={setSearchText}
             style={styles.searchInput}
-            maxLength={20}
+            maxLength={16}
           />
           </View>
         )}
