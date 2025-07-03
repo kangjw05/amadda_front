@@ -21,7 +21,6 @@ const PersonalCalendar = () => {
     <View style={styles.container}>
       <Header />
       <Calendar />
-      {/* <ScrollView></ScrollView> */}
     </View>
   );
 };
