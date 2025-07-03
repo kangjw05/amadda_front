@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Dimensions,
   FlatList,
+  ScrollView,
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
