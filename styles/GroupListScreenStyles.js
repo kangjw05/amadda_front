@@ -2,19 +2,19 @@ import { StyleSheet } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
 const GroupListScreenStyles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: themeColors.bg },
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
     paddingHorizontal: 6,
-    paddingVertical: 16,
     borderBottomColor: themeColors.highlight,
     borderBottomWidth: 1,
   },
   headText: {
     flex: 1,
-    fontSize: 30,
+    fontSize: 25,
     padding: 8,
+    marginVertical: 10,
     marginLeft: 10,
     color: themeColors.highlight,
   },

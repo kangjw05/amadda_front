@@ -10,14 +10,19 @@ const SettingScreenStyles = StyleSheet.create({
   },
   setting: {
     backgroundColor: themeColors.bg,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 6,
     borderBottomColor: themeColors.highlight,
     borderBottomWidth: 1,
   },
   font: {
+    flex: 1,
     fontSize: 25,
-    color: themeColors.highlight,
-    paddingLeft: 20,
+    padding: 8,
     marginVertical: 10,
+    marginLeft: 10,
+    color: themeColors.highlight,
   },
   information: {
     flexDirection: "row",
