@@ -2,9 +2,7 @@ import React, { useState, useEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 
-const CalendarPage = ({ year, month }) => {
-  const [selectedDay, setSelectedDay] = useState(null);
-
+const CalendarPage = ({ year, month, selectedDate, setSelectedDate }) => {
   const generateMatrix = () => {
     const matrix = [];
 
@@ -42,8 +40,16 @@ const CalendarPage = ({ year, month }) => {
 
     if (!item.isInCurrentMonth) textStyle.push(styles.cellTextGray); // 현재 달이 아니면 투명도
 
-    if (item.day === selectedDay && item.isInCurrentMonth)
+    const isSelected =
+      selectedDate &&
+      year === selectedDate.getFullYear() &&
+      month === selectedDate.getMonth() + 1 &&
+      item.day === selectedDate.getDate() &&
+      item.isInCurrentMonth;
+
+    if (isSelected) {
       cellStyle.push(styles.selectedCell); // 선택시 배경
+    }
 
     // 객체로 변환 후 리턴
     let totalStyles = {
@@ -56,7 +62,11 @@ const CalendarPage = ({ year, month }) => {
 
   // 추가 수정 필요
   const handleDayPress = (day, isInCurrentMonth) => {
-    if (isInCurrentMonth) setSelectedDay(day);
+    // if (isInCurrentMonth) setSelectedDate(new Date(year, month - 1, day));
+
+    if (isInCurrentMonth) {
+      setSelectedDate(new Date(year, month - 1, day));
+    }
   };
 
   const renderCalendar = () => {
