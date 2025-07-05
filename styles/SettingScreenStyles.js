@@ -65,6 +65,7 @@ const SettingScreenStyles = StyleSheet.create({
   },
   input: {
     paddingHorizontal: 10,
+    paddingVertical: 4,
     marginVertical: 5,
     fontSize: 16,
     flex: 1,
