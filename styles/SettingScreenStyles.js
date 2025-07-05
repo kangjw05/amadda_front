@@ -156,6 +156,7 @@ const SettingScreenStyles = StyleSheet.create({
     paddingBottom: 5,
   },
   categoryContainer: {
+    backgroundColor: "#fff",
     flexDirection: "column",
     width: "100%",
     borderRadius: 10,
@@ -166,8 +167,6 @@ const SettingScreenStyles = StyleSheet.create({
     alignItems: "center",
     padding: 5,
     borderRadius: 7,
-    borderWidth: 1.5,
-    borderColor: themeColors.highlight,
     marginTop: 5,
   },
   categoryText: {

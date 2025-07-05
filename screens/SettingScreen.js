@@ -187,11 +187,20 @@ const SettingScreen = () => {
 
 
   const deleteCategory = async () => {
-    const newList = categoriesList.filter(cat => cat.id !== editingCategory.id);
+    // id가 1이면(기타 카테고리) 삭제 막기
+    if (editingCategory.id === 1) {
+      Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
+      return;
+    }
+
+    const newList = categoriesList.filter(
+      (cat) => cat.id !== editingCategory.id
+    );
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
   };
+
 
   return (
     <View style={styles.fullcontainer}>
