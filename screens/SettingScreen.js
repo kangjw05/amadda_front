@@ -44,7 +44,6 @@ const SettingScreen = () => {
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [isEditingPassword, setisEditingPassword] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [checkPassword, setCheckPassword] = useState("");
 
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
