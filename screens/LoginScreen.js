@@ -17,6 +17,8 @@ import { themeColors, categories, groups } from "../Colors";
 import styles from "../styles/LoginScreenStyles";
 
 const LoginScreen = ({ onLogin }) => {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.fullcontainer}>
       <View style={styles.container_logo}>
@@ -26,7 +28,7 @@ const LoginScreen = ({ onLogin }) => {
 
       <View style={styles.container_login1}>
         <Image
-          source={require("../assets/Tab/Login_ID.png")}
+          source={require("../assets/images/personIcon.png")}
           style={styles.Login_idpw} //아직 Login_id 스타일 없음.
         />
         <TextInput placeholder={"ID"} style={styles.input} />
@@ -34,7 +36,7 @@ const LoginScreen = ({ onLogin }) => {
 
       <View style={styles.container_login1}>
         <Image
-          source={require("../assets/Tab/Login_PW.png")}
+          source={require("../assets/images/Lock.png")}
           style={styles.Login_idpw} //아직 Login_pw 스타일 없음.
         />
         <TextInput placeholder={"PW"} style={styles.input} />
@@ -59,7 +61,7 @@ const LoginScreen = ({ onLogin }) => {
 
         <Text></Text>
 
-        <TouchableOpacity onPress={() => console.log("회원가입")}>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.join}>회원이 아니신가요?</Text>
         </TouchableOpacity>
       </View>

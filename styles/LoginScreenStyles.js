@@ -56,7 +56,10 @@ const LoginScreenStyles = StyleSheet.create({
     width: screenWidth * 0.65,
   },
 
-  Login_idpw: {},
+  Login_idpw: {
+    width: 25,
+    height: 25
+  },
 
   Button: {
     backgroundColor: "#555B8F",
