@@ -17,6 +17,35 @@ import { themeColors, categories, groups } from "../Colors";
 import styles from "../styles/LoginScreenStyles";
 
 const LoginScreen = ({ onLogin }) => {
+  const [id, setId] = useState("");
+  const [pw, setPw] = useState("");
+
+  const login = async () => {
+    const formBody = `username=${encodeURIComponent(
+      id
+    )}&password=${encodeURIComponent(pw)}`;
+
+    try {
+      const response = await fetch("http://121.145.169.65:8000/users/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody,
+      });
+
+      const result = await response.json();
+      console.log("로그인 결과:", result);
+
+      if (response.ok) {
+        onLogin(); // 성공 처리
+      } else {
+        alert("로그인 실패: " + result.message);
+      }
+    } catch (err) {
+      console.error("로그인 요청 실패:", err);
+      alert("서버 연결 실패");
+    }
+  };
+
   return (
     <View style={styles.fullcontainer}>
       <View style={styles.container_logo}>
@@ -29,7 +58,12 @@ const LoginScreen = ({ onLogin }) => {
           source={require("../assets/Tab/Login_ID.png")}
           style={styles.Login_idpw} //아직 Login_id 스타일 없음.
         />
-        <TextInput placeholder={"ID"} style={styles.input} />
+        <TextInput
+          placeholder={"ID"}
+          style={styles.input}
+          value={id}
+          onChangeText={setId}
+        />
       </View>
 
       <View style={styles.container_login1}>
@@ -37,17 +71,17 @@ const LoginScreen = ({ onLogin }) => {
           source={require("../assets/Tab/Login_PW.png")}
           style={styles.Login_idpw} //아직 Login_pw 스타일 없음.
         />
-        <TextInput placeholder={"PW"} style={styles.input} />
+        <TextInput
+          placeholder={"PW"}
+          style={styles.input}
+          // secureTextEntry
+          value={pw}
+          onChangeText={setPw}
+        />
       </View>
 
       <View style={styles.container_login2}>
-        <TouchableOpacity
-          style={styles.Button}
-          onPress={() => {
-            console.log("로그인");
-            onLogin();
-          }}
-        >
+        <TouchableOpacity style={styles.Button} onPress={login}>
           <Text style={styles.ButtonText}>로그인</Text>
         </TouchableOpacity>
       </View>
