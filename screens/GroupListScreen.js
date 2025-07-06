@@ -81,7 +81,6 @@ const GroupListScreen = () => {
     // 그룹 생성 로직
     console.log("그룹 생성:", groupName);
     const newGroup = {
-      id: Date.now().toString(),
       name: groupName,
       creator: "마정우",
       code: groupCode,
@@ -140,7 +139,7 @@ const GroupListScreen = () => {
         {text: "나가기",
           style: "destructive",
           onPress: () => {
-            const updatedGroups = groupList.filter(g => g.id !== group.id);
+            const updatedGroups = groupList.filter(g => g.code !== group.code);
             setGroupList(updatedGroups);
             saveGroupsToStorage(updatedGroups);
           }
@@ -168,6 +167,7 @@ const GroupListScreen = () => {
             value={searchText}
             onChangeText={setSearchText}
             style={styles.searchInput}
+            maxLength={16}
           />
           </View>
         )}
@@ -239,6 +239,7 @@ const GroupListScreen = () => {
                   value={groupName}
                   onChangeText={setGroupName}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
@@ -253,6 +254,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
@@ -294,6 +296,7 @@ const GroupListScreen = () => {
                 <TextInput
                   onChangeText={setGroupCode}
                   style={styles.input}
+                  maxLength={6}
                 />
                 </ImageBackground>
                 </View>
@@ -308,6 +311,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
+                  maxLength={20}
                 />
                 </ImageBackground>
                 </View>
@@ -331,7 +335,7 @@ const GroupListScreen = () => {
           item.name.toLowerCase().includes(searchText.toLowerCase()) ||
           item.creator.toLowerCase().includes(searchText.toLowerCase())
         )}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.code}
         renderItem={({ item }) => {
           const colorTheme = groups[item.colorKey];
           return (
