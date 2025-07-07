@@ -243,81 +243,8 @@ const SettingScreen = () => {
             <Text style={styles.input}>{accountData.email}</Text>
             </View>
           </View>
-
-          <View style={styles.inputRow}>
-            <TouchableOpacity onPress={() => openPasswordModal()}>
-            <View style={{...styles.inputContainer, borderBottomWidth : 0} }>
-            <Text style={styles.label}>비밀번호 변경</Text>
-            </View>
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
-      <Modal 
-        visible={isEditingPassword}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setisEditingPassword(false)}
-      >
-        <TouchableWithoutFeedback onPress={() => setisEditingPassword(false)}>
-        <View style={styles.modalOverlay}>
-          <TouchableWithoutFeedback>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>비밀번호 변경</Text>
-            </View>
-            <Text style={styles.modalLabel}>현재 비밀번호</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder="현재 비밀번호"
-                value={password}
-                onChangeText={setPassword}
-                style={styles.modalInput}
-                maxLength={20}
-              />
-            </View>
-            <Text style={styles.modalLabel}>새 비밀번호</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder="새 비밀번호"
-                value={tempPassword}
-                onChangeText={setTempPassword}
-                style={styles.modalInput}
-                maxLength={20}
-              />
-            </View>
-            <Text style={styles.modalLabel}>새 비밀번호 확인</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                placeholder="새 비밀번호 확인"
-                value={checkPassword}
-                onChangeText={setCheckPassword}
-                style={styles.modalInput}
-                maxLength={20}
-              />
-              {tempPassword !== checkPassword || tempPassword === "" || checkPassword === "" ? (
-                <Image
-                  source={require("../assets/images/checkBoxOutlineIcon.png")}
-                  style={styles.checkIcon}/>
-              ) : (
-                <Image
-                  source={require("../assets/images/checkBoxIcon.png")}
-                  style={styles.checkIcon}/>
-              )}
-            </View>
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity onPress={() => setisEditingPassword(false)} style={styles.cancelButton}>
-                <Text style={styles.actionButtonText}>취소</Text>
-              </TouchableOpacity>
-              <TouchableOpacity onPress={() => savePassword()} style={styles.actionButton}>
-                <Text style={styles.actionButtonText}>변경</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-          </TouchableWithoutFeedback>
-        </View>
-        </TouchableWithoutFeedback>
-      </Modal>
       <View style={styles.information}>
         <View style={styles.leftpannel}>
           <Image
@@ -509,7 +436,7 @@ const SettingScreen = () => {
             </View>
             <View style={styles.rightpannel}>
               <View style={styles.inputRow}>
-                <Text style={styles.findPWFont}>비밀번호 찾기</Text>
+                <Text style={styles.findPWFont}>비밀번호 변경</Text>
             </View>
             </View>
           </TouchableOpacity>
