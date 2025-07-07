@@ -46,7 +46,7 @@ const GroupListScreen = () => {
   const [searchText, setSearchText] = useState("");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
   useEffect(() => {
-    loadGroupsFromStorage();
+    loadGroups();
   }, []);
 
   const openModal = () => {
@@ -61,91 +61,198 @@ const GroupListScreen = () => {
     setGroupPassword("");
   };
 
-  const handleCreateGroup = () => {
+  const handleCreateGroup = async () => {
     if (groupName.trim() === "") {
-    Alert.alert(
-      "그룹명 미입력", 
-      "그룹 이름을 입력해주세요.",
-      [{text: "확인"}]
-    );
-    return;
-  }
-    if (groupPassword.trim() === "") {
-      Alert.alert(
-        "비밀번호 미입력",
-        "비밀번호를 입력해주세요.",
-      [{text: "확인"}]
-      );
+      Alert.alert("그룹명 미입력", "그룹 이름을 입력해주세요.", [{ text: "확인" }]);
       return;
     }
-    // 그룹 생성 로직
-    console.log("그룹 생성:", groupName);
-    const newGroup = {
-      name: groupName,
-      creator: "마정우",
-      code: groupCode,
-      password: groupPassword,
-      colorKey: "group10",
-    };
-    const updatedGroups = [...groupList, newGroup];
+    if (groupPassword.trim() === "") {
+      Alert.alert("비밀번호 미입력", "비밀번호를 입력해주세요.", [{ text: "확인" }]);
+      return;
+    }
 
-    setGroupList(updatedGroups); // 그룹 목록에 추가
-    saveGroupsToStorage(updatedGroups);
-    closeModal();
-  };
-
-  const handleJoinGroup = () => {
-    // 그룹 참가 로직
-    console.log("그룹 참가:", groupCode, groupPassword);
-    closeModal();
-  };
-
-  const saveGroupsToStorage = async (groups) => {
     try {
-      await AsyncStorage.setItem("groupList", JSON.stringify(groups));
+      // 생성 API 호출
+      const response = await axios.post("http://121.145.169.65:8000/group/create_group", {
+        name: groupName,
+        password: groupPassword,
+        creatorId: "마정우", // 실제 로그인된 사용자 id 사용
+        participants: ["마정우"]
+      });
+      // 응답 예시: { code: "QWE789" }
+      const newCode = response.data.code;
+
+      // 그룹 목록에 추가
+      const newGroup = {
+        name: groupName,
+        creator: "마정우",
+        code: newCode,
+        colorKey: "group10",
+      };
+      const updatedGroups = [...groupList, newGroup];
+      setGroupList(updatedGroups);
+
+      // 필요하면 AsyncStorage에 저장
+      saveGroupsToStorage(updatedGroups);
+
+      closeModal();
     } catch (error) {
-      console.error("그룹 저장 실패:", error);
+      console.error("그룹 생성 실패:", error);
+      Alert.alert("에러", "그룹 생성에 실패했습니다.");
     }
   };
 
-  const loadGroupsFromStorage = async () => {
+
+  const handleJoinGroup = async () => {
+    if (groupCode.trim() === "" || groupPassword.trim() === "") {
+      Alert.alert("입력 필요", "코드와 비밀번호를 모두 입력해주세요.");
+      return;
+    }
+
     try {
-      const storedGroups = await AsyncStorage.getItem("groupList");
-      if (storedGroups !== null) {
-        setGroupList(JSON.parse(storedGroups));
+      const response = await axios.post("http://121.145.169.65:8000/group/register", {
+        code: groupCode,
+        password: groupPassword
+      });
+
+      const { exists, passwordMatch } = response.data;
+
+      if (!exists) {
+        Alert.alert("오류", "존재하지 않는 그룹 코드입니다.");
+        return;
       }
+      if (!passwordMatch) {
+        Alert.alert("오류", "비밀번호가 일치하지 않습니다.");
+        return;
+      }
+
+      // 성공 시 그룹 정보 새로고침
+      await loadGroups();
+      closeModal();
     } catch (error) {
-      console.error("그룹 불러오기 실패:", error);
+      console.error("그룹 참가 실패:", error);
+      Alert.alert("에러", "그룹 참가에 실패했습니다.");
+    }
+  };
+
+  const loadGroups = async () => {
+    try {
+      const response = await axios.get("http://121.145.169.65:8000/group/search_group");
+      setGroupList(response.data);
+    } catch (error) {
+      console.error("그룹 리스트 불러오기 실패:", error);
+      Alert.alert("에러", "그룹 리스트를 불러오지 못했습니다.");
     }
   };
 
   const renderRightActions = (group) => {
-  return (
-    <TouchableOpacity
-      style={styles.leaveButton}
-      onPress={() => handleLeaveGroup(group)}
-    >
-      <Text style={styles.leaveButtonText}>나가기</Text>
-    </TouchableOpacity>
-  );
-};
+    return (
+      <TouchableOpacity
+        style={styles.leaveButton}
+        onPress={() => handleLeaveGroup(group)}
+      >
+        <Text style={styles.leaveButtonText}>나가기</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const handleLeaveGroup = (group) => {
-    Alert.alert(
-      "그룹 나가기",
-      `"${group.name}" 그룹을 나가시겠습니까?`,
-      [
-        {text: "취소", style: "cancel"},
-        {text: "나가기",
-          style: "destructive",
-          onPress: () => {
-            const updatedGroups = groupList.filter(g => g.code !== group.code);
-            setGroupList(updatedGroups);
-            saveGroupsToStorage(updatedGroups);
-          }
-        },
-      ]
-    );
+    const currentUserId = "마정우"; // TODO: 실제 로그인 사용자 정보로 교체
+
+    if (group.creator === currentUserId) {
+      // 그룹 생성자인 경우 그룹 삭제 로직
+      Alert.alert(
+        "그룹 삭제",
+        `"${group.name}" 그룹의 생성자입니다.\n이 그룹을 삭제하려면 확인 버튼을 누르세요.`,
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "확인",
+            style: "destructive",
+            onPress: () => {
+              // 이름 입력용 팝업
+              Alert.prompt(
+                "그룹 이름 확인",
+                `그룹 이름을 정확히 입력하면 삭제됩니다.`,
+                [
+                  {
+                    text: "취소",
+                    style: "cancel",
+                  },
+                  {
+                    text: "삭제",
+                    style: "destructive",
+                    onPress: async (inputText) => {
+                      if (inputText.trim() !== group.name) {
+                        Alert.alert(
+                          "오류",
+                          "입력한 이름이 그룹 이름과 일치하지 않습니다."
+                        );
+                        return;
+                      }
+                      try {
+                        const response = await axios.post(
+                          "http://121.145.169.65:8000/group/del_group",
+                          {
+                            code: group.code,
+                            userId: currentUserId,
+                          }
+                        );
+                        if (response.data.success) {
+                          await loadGroups();
+                          Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
+                        } else {
+                          Alert.alert("에러", "그룹 삭제에 실패했습니다.");
+                        }
+                      } catch (error) {
+                        console.error("그룹 삭제 실패:", error);
+                        Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
+                      }
+                    },
+                  },
+                ],
+                "plain-text"
+              );
+            },
+          },
+        ]
+      );
+    } else {
+      // 일반 참여자인 경우 나가기 로직
+      Alert.alert(
+        "그룹 나가기",
+        `"${group.name}" 그룹을 나가시겠습니까?`,
+        [
+          { text: "취소", style: "cancel" },
+          {
+            text: "나가기",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                const response = await axios.get(
+                  "http://121.145.169.65:8000/group/out_group",
+                  {
+                    params: {
+                      code: group.code,
+                      userId: currentUserId,
+                    },
+                  }
+                );
+                if (response.data.success) {
+                  await loadGroups();
+                  Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
+                } else {
+                  Alert.alert("에러", "그룹 나가기 실패");
+                }
+              } catch (error) {
+                console.error("그룹 나가기 실패:", error);
+                Alert.alert("에러", "그룹 나가기에 실패했습니다.");
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   return (
