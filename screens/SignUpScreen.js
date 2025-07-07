@@ -117,7 +117,12 @@ const SignUpScreen = () => {
               try {
                 const res = await axios.post(
                   `${API_BASE_URL}/email/request`,
-                  { email }
+                  { email },
+                  {
+                    headers: {
+                      "Content-Type": "application/json"
+                    }
+                  }
                 );
                 if (res.data.success) {
                   alert("인증 메일이 발송되었습니다.");
@@ -173,7 +178,12 @@ const SignUpScreen = () => {
                 try {
                   const res = await axios.post(
                     `${API_BASE_URL}/email/verify`,
-                    { email, code }
+                    { email, code },
+                    {
+                      headers: {
+                        "Content-Type": "application/json"
+                      }
+                    }
                   );
                   if (res.data.success) {
                     setCodeVerified(true);
@@ -282,10 +292,16 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await axios.post(`${API_BASE_URL}/api/register`, {
+                const res = await axios.post(`${API_BASE_URL}/users/register`, 
+                  {
                   email,
                   username,
                   password,
+                },
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  }
                 });
                 if (res.data.success) {
                   alert("회원가입이 완료되었습니다.");
