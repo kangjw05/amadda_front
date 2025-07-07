@@ -23,9 +23,9 @@ const SignUpScreen = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   useEffect(() => {
-    let intervalId;
+    let timerId;
 
-    const checkAndStartPolling = async () => {
+    const checkAndStartTimer = async () => {
       const storedEmail = await AsyncStorage.getItem("emailAddress");
       if (!storedEmail) return;
 
@@ -35,46 +35,29 @@ const SignUpScreen = () => {
         });
 
         if (ttlRes.data.success) {
-          if (ttlRes.data.ttl <= 0) {
+          const ttl = ttlRes.data.ttl;
+          if (ttl <= 0) {
             await expireEmail(storedEmail);
             return;
           }
 
-          intervalId = setInterval(async () => {
-            const pollRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
-              params: { email: storedEmail },
-            });
-
-            if (pollRes.data.success && pollRes.data.ttl <= 0) {
-              await expireEmail(storedEmail);
-              clearInterval(intervalId);
-            }
-          }, 10_000);
+          // ttl 초 후에 만료 처리
+          timerId = setTimeout(async () => {
+            await expireEmail(storedEmail);
+          }, ttl * 1000);
         }
       } catch (err) {
         console.error("TTL 초기화 오류:", err);
       }
     };
 
-    const expireEmail = async (emailToExpire) => {
-      try {
-        const expireRes = await axios.post(`${API_BASE_URL}/email/expire`, {
-          email: emailToExpire,
-        });
-        if (expireRes.data.success) {
-          await AsyncStorage.multiRemove(["emailSendTime", "emailAddress"]);
-        }
-      } catch (err) {
-        console.error("만료 요청 오류:", err);
-      }
-    };
-
-    checkAndStartPolling();
+    checkAndStartTimer();
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
+      if (timerId) clearTimeout(timerId);
     };
   }, []);
+
 
   return (
     <View style={styles.mainContainer}>
