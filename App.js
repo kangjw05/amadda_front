@@ -5,6 +5,7 @@ import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createStackNavigator } from "@react-navigation/stack";
 
 import LoginScreen from "./screens/LoginScreen";
+import FindPw from "./screens/FindPwScreen";
 import SignUp from "./screens/SignUpScreen";
 import MainTab from "./navigation/MainTab";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -16,23 +17,24 @@ const App = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-    <NavigationContainer>
-      <Stack.Navigator
-        initialRouteName="LoginScreen"
-        screenOptions={{ animationEnabled: false, headerShown: false }}
-      >
-        {!isLoggedIn ? (
-          <>
-          <Stack.Screen name="LoginScreen">
-            {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
-          </Stack.Screen>
-          <Stack.Screen name="SignUp" component={SignUp} />
-          </>
-        ) : (
-          <Stack.Screen name="Main" component={MainTab} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+      <NavigationContainer>
+        <Stack.Navigator
+          initialRouteName="LoginScreen"
+          screenOptions={{ animationEnabled: false, headerShown: false }}
+        >
+          {!isLoggedIn ? (
+            <>
+              <Stack.Screen name="LoginScreen">
+                {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
+              </Stack.Screen>
+              <Stack.Screen name="SignUp" component={SignUp} />
+              <Stack.Screen name="FindPw" component={FindPw} />
+            </>
+          ) : (
+            <Stack.Screen name="Main" component={MainTab} />
+          )}
+        </Stack.Navigator>
+      </NavigationContainer>
     </GestureHandlerRootView>
   );
 };

@@ -55,7 +55,7 @@ const LoginScreen = ({ onLogin }) => {
       </View>
 
       <View style={styles.container_fpw_join}>
-        <TouchableOpacity onPress={() => console.log("비밀번호 찾기")}>
+        <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
           <Text style={styles.fpw}>비밀번호를 잊으셨나요?</Text>
         </TouchableOpacity>
 

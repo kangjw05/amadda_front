@@ -9,14 +9,14 @@ import {
   ImageBackground,
   ScrollView,
 } from "react-native";
-import styles from "../styles/SignUpScreenStyles";
 
-const SignUpScreen = () => {
+import styles from "../styles/FindPwScreenStyles";
+
+const FindPwScreen = () => {
   const navigation = useNavigation();
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
-  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -96,26 +96,6 @@ const SignUpScreen = () => {
           )}
         </View>
 
-        {/* 계정 이름 */}
-        <View style={styles.inputRow}>
-          <Image
-            source={require("../assets/images/personIcon.png")}
-            style={styles.personIcon}
-          />
-          <ImageBackground
-            source={require("../assets/images/nameInput.png")}
-            style={styles.inputBackground}
-            imageStyle={styles.inputBackgroundImage}
-          >
-            <TextInput
-              placeholder="계정 이름"
-              style={styles.textInput}
-              value={username}
-              onChangeText={setUsername}
-            />
-          </ImageBackground>
-        </View>
-
         {/* 비밀번호 */}
         <View style={styles.inputRow}>
           <Image
@@ -128,7 +108,7 @@ const SignUpScreen = () => {
             imageStyle={styles.inputBackgroundImage}
           >
             <TextInput
-              placeholder="비밀번호"
+              placeholder="새 비밀번호"
               secureTextEntry
               style={styles.textInput}
               value={password}
@@ -149,7 +129,7 @@ const SignUpScreen = () => {
             imageStyle={styles.inputBackgroundImage}
           >
             <TextInput
-              placeholder="비밀번호 확인"
+              placeholder="새 비밀번호 확인"
               secureTextEntry
               style={styles.textInput}
               value={confirmPassword}
@@ -171,16 +151,16 @@ const SignUpScreen = () => {
           {/* 회원가입 버튼 */}
           <TouchableOpacity
             style={styles.joinButton}
-            onPress={() => console.log("회원가입")}
+            onPress={() => console.log("비밀번호 변경 완료")}
           >
-            <Text style={styles.joinButtonText}>회원가입</Text>
+            <Text style={styles.joinButtonText}>변경</Text>
           </TouchableOpacity>
         </View>
       </View>
       {/* 하단 로그인/비밀번호 */}
       <View style={styles.footerLinks}>
-        <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
-          <Text style={styles.footerLinkText}>비밀번호를 잊으셨나요?</Text>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
+          <Text style={styles.footerLinkText}>회원이 아니신가요?</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
           <Text style={styles.footerLinkText}>로그인</Text>
@@ -190,4 +170,4 @@ const SignUpScreen = () => {
   );
 };
 
-export default SignUpScreen;
+export default FindPwScreen;
