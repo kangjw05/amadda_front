@@ -44,7 +44,6 @@ const SettingScreen = () => {
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [isEditingPassword, setisEditingPassword] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [checkPassword, setCheckPassword] = useState("");
 
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
@@ -72,14 +71,6 @@ const SettingScreen = () => {
     }
   };
 
-  const getMaskedPassword = (password) => {
-    if (!password) return "";
-    if (password.length <= 3) return "*".repeat(password.length);
-    const visible = password.slice(0, 3);
-    const hidden = "*".repeat(password.length - 3);
-    return visible + hidden;
-  };
-
   const openPasswordModal = () => {
     setPassword("");
     setTempPassword("");
@@ -96,7 +87,7 @@ const SettingScreen = () => {
       Alert.alert("비밀번호 입력 오류", "비밀번호를 입력해주세요.");
       return;
     }
-    if (tempPassword === accountData.password) {
+    {/*if (tempPassword === accountData.password) {
       Alert.alert("비밀번호 변경 오류", "새 비밀번호가 현재 비밀번호와 동일합니다.");
       return;
     }
@@ -104,12 +95,11 @@ const SettingScreen = () => {
       Alert.alert("비밀번호 오류", "현재 비밀번호가 일치하지 않습니다.");
       return;
     }
-    const newAccountData = {
+      */}
+    {/*const newAccountData = {
       ...accountData,
       password: tempPassword,
-    };
-    setAccountData(newAccountData);
-    await saveAccountData(newAccountData);
+    };*/}
     setisEditingPassword(false);
   };
 
@@ -130,7 +120,6 @@ const SettingScreen = () => {
   const [accountData, setAccountData] = useState({ 
     account: "마정우",
     email: "majw.naver.com",
-    password: "1234",
   });
   
   const tempAccount = accountData.account;
@@ -187,11 +176,20 @@ const SettingScreen = () => {
 
 
   const deleteCategory = async () => {
-    const newList = categoriesList.filter(cat => cat.id !== editingCategory.id);
+    // id가 1이면(기타 카테고리) 삭제 막기
+    if (editingCategory.id === 1) {
+      Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
+      return;
+    }
+
+    const newList = categoriesList.filter(
+      (cat) => cat.id !== editingCategory.id
+    );
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
   };
+
 
   return (
     <View style={styles.fullcontainer}>
@@ -247,18 +245,11 @@ const SettingScreen = () => {
           </View>
 
           <View style={styles.inputRow}>
-            <Text style={styles.label}>비밀번호</Text>
-            <View style={styles.inputContainer}>
-            <Text style={styles.input}>
-              {getMaskedPassword(accountData.password)}
-            </Text>
             <TouchableOpacity onPress={() => openPasswordModal()}>
-              <Image
-                source={require("../assets/images/pencilIcon.png")}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
+            <View style={{...styles.inputContainer, borderBottomWidth : 0} }>
+            <Text style={styles.label}>비밀번호 변경</Text>
             </View>
+            </TouchableOpacity>
           </View>
         </View>
       </View>
