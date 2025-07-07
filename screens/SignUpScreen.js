@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
   Image,
@@ -7,9 +7,11 @@ import {
   TextInput,
   TouchableOpacity,
   ImageBackground,
-  ScrollView,
 } from "react-native";
 import styles from "../styles/SignUpScreenStyles";
+import axios from "axios";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_BASE_URL } from "@env";
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
@@ -20,9 +22,62 @@ const SignUpScreen = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+  useEffect(() => {
+    let intervalId;
+
+    const checkAndStartPolling = async () => {
+      const storedEmail = await AsyncStorage.getItem("emailAddress");
+      if (!storedEmail) return;
+
+      try {
+        const ttlRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
+          params: { email: storedEmail },
+        });
+
+        if (ttlRes.data.success) {
+          if (ttlRes.data.ttl <= 0) {
+            await expireEmail(storedEmail);
+            return;
+          }
+
+          intervalId = setInterval(async () => {
+            const pollRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
+              params: { email: storedEmail },
+            });
+
+            if (pollRes.data.success && pollRes.data.ttl <= 0) {
+              await expireEmail(storedEmail);
+              clearInterval(intervalId);
+            }
+          }, 10_000);
+        }
+      } catch (err) {
+        console.error("TTL 초기화 오류:", err);
+      }
+    };
+
+    const expireEmail = async (emailToExpire) => {
+      try {
+        const expireRes = await axios.post(`${API_BASE_URL}/email/expire`, {
+          email: emailToExpire,
+        });
+        if (expireRes.data.success) {
+          await AsyncStorage.multiRemove(["emailSendTime", "emailAddress"]);
+        }
+      } catch (err) {
+        console.error("만료 요청 오류:", err);
+      }
+    };
+
+    checkAndStartPolling();
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []);
 
   return (
-    <ScrollView contentContainerStyle={styles.mainContainer}>
+    <View style={styles.mainContainer}>
       {/* 로고 */}
       <View style={styles.logoContainer}>
         <Image
@@ -45,15 +100,40 @@ const SignUpScreen = () => {
             style={styles.inputBackground}
             imageStyle={styles.inputBackgroundImage}
           >
-            <TextInput 
-            placeholder="이메일" 
-            style={styles.textInput}
-            value={email}
-            onChangeText={setEmail} />
+            <TextInput
+              placeholder="이메일"
+              style={styles.textInput}
+              value={email}
+              onChangeText={setEmail}
+            />
           </ImageBackground>
           <TouchableOpacity
             style={styles.actionButton}
-            onPress={() => console.log("메일 전송")}
+            onPress={async () => {
+              if (!email) {
+                alert("이메일을 입력해주세요.");
+                return;
+              }
+              try {
+                const res = await axios.post(
+                  `${API_BASE_URL}/email/request`,
+                  { email }
+                );
+                if (res.data.success) {
+                  alert("인증 메일이 발송되었습니다.");
+                  const sendTime = Date.now();
+                  await AsyncStorage.multiSet([
+                    ["emailSendTime", sendTime.toString()],
+                    ["emailAddress", email],
+                  ]);
+                } else {
+                  alert("이메일 발송에 실패했습니다.");
+                }
+              } catch (err) {
+                console.error(err);
+                alert("서버 오류가 발생했습니다.");
+              }
+            }}
           >
             <Text style={styles.actionButtonText}>메일 발송</Text>
           </TouchableOpacity>
@@ -70,11 +150,12 @@ const SignUpScreen = () => {
             style={styles.inputBackground}
             imageStyle={styles.inputBackgroundImage}
           >
-            <TextInput 
-            placeholder="인증 코드" 
-            style={styles.textInput} 
-            value={code}
-            onChangeText={setCode}/>
+            <TextInput
+              placeholder="인증 코드"
+              style={styles.textInput}
+              value={code}
+              onChangeText={setCode}
+            />
           </ImageBackground>
           {codeVerified ? (
             <Image
@@ -84,12 +165,28 @@ const SignUpScreen = () => {
           ) : (
             <TouchableOpacity
               style={styles.actionButton}
-              onPress={() => {
-                  console.log("인증 코드 확인");
-                  // 여기서 실제 인증 로직 수행 후 성공이면:
-                  setCodeVerified(true);
+              onPress={async () => {
+                if (!email || !code) {
+                  alert("이메일과 인증 코드를 입력해주세요.");
+                  return;
+                }
+                try {
+                  const res = await axios.post(
+                    `${API_BASE_URL}/email/verify`,
+                    { email, code }
+                  );
+                  if (res.data.success) {
+                    setCodeVerified(true);
+                    alert("인증이 완료되었습니다.");
+                  } else {
+                    alert("인증 코드가 올바르지 않습니다.");
+                  }
+                } catch (err) {
+                  console.error(err);
+                  alert("서버 오류가 발생했습니다.");
+                }
               }}
-              >
+            >
               <Text style={styles.actionButtonText}>확인</Text>
             </TouchableOpacity>
           )}
@@ -106,11 +203,12 @@ const SignUpScreen = () => {
             style={styles.inputBackground}
             imageStyle={styles.inputBackgroundImage}
           >
-            <TextInput 
-            placeholder="계정 이름" 
-            style={styles.textInput} 
-            value={username}
-            onChangeText={setUsername}/>
+            <TextInput
+              placeholder="계정 이름"
+              style={styles.textInput}
+              value={username}
+              onChangeText={setUsername}
+            />
           </ImageBackground>
         </View>
 
@@ -154,27 +252,59 @@ const SignUpScreen = () => {
               onChangeText={setConfirmPassword}
             />
           </ImageBackground>
-                <Image
-                source={(confirmPassword !== "") &&
-                    (password !== "") &&
-                    (password === confirmPassword)
-                    ? require("../assets/images/checkBoxIcon.png")
-                    : require("../assets/images/checkBoxOutlineIcon.png")
-                }
-                style={styles.inputIconRight}
-                />
+          <Image
+            source={
+              confirmPassword !== "" &&
+              password !== "" &&
+              password === confirmPassword
+                ? require("../assets/images/checkBoxIcon.png")
+                : require("../assets/images/checkBoxOutlineIcon.png")
+            }
+            style={styles.inputIconRight}
+          />
         </View>
-        <View style={styles.buttonPart}>
+
         {/* 회원가입 버튼 */}
-        <TouchableOpacity
+        <View style={styles.buttonPart}>
+          <TouchableOpacity
             style={styles.joinButton}
-            onPress={() => console.log("회원가입")}
-        >
+            onPress={async () => {
+              if (!email || !username || !password || !confirmPassword) {
+                alert("모든 항목을 입력해주세요.");
+                return;
+              }
+              if (password !== confirmPassword) {
+                alert("비밀번호가 일치하지 않습니다.");
+                return;
+              }
+              if (!codeVerified) {
+                alert("이메일 인증을 완료해주세요.");
+                return;
+              }
+              try {
+                const res = await axios.post(`${API_BASE_URL}/api/register`, {
+                  email,
+                  username,
+                  password,
+                });
+                if (res.data.success) {
+                  alert("회원가입이 완료되었습니다.");
+                  navigation.navigate("LoginScreen");
+                } else {
+                  alert("회원가입에 실패했습니다.");
+                }
+              } catch (err) {
+                console.error(err);
+                alert("서버 오류가 발생했습니다.");
+              }
+            }}
+          >
             <Text style={styles.joinButtonText}>회원가입</Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
         </View>
       </View>
-      {/* 하단 로그인/비밀번호 */}
+
+      {/* 하단 링크 */}
       <View style={styles.footerLinks}>
         <TouchableOpacity onPress={() => console.log("비밀번호 찾기")}>
           <Text style={styles.footerLinkText}>비밀번호를 잊으셨나요?</Text>
@@ -183,7 +313,7 @@ const SignUpScreen = () => {
           <Text style={styles.footerLinkText}>로그인</Text>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </View>
   );
 };
 

@@ -224,7 +224,6 @@ const SettingScreen = () => {
                   style={styles.input}
                   maxLength={16}
                 />
-
               ) : (
                 <Text style={styles.input}>{accountData.account}</Text>
               )}
