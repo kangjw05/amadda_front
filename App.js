@@ -9,6 +9,9 @@ import SignUp from "./screens/SignUpScreen";
 import MainTab from "./navigation/MainTab";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import GroupScreen from "./screens/GroupScreen";
+
+
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -29,7 +32,10 @@ const App = () => {
           <Stack.Screen name="SignUp" component={SignUp} />
           </>
         ) : (
-          <Stack.Screen name="Main" component={MainTab} />
+          <>
+            <Stack.Screen name="Main" component={MainTab} />
+            <Stack.Screen name="GroupScreen" component={GroupScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>
