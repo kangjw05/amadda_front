@@ -30,7 +30,7 @@ const SignUpScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await axios.get("http://ser.iptime.org:8000/email/ttl", {
+        const ttlRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
           params: { email: storedEmail },
         });
 
@@ -57,7 +57,6 @@ const SignUpScreen = () => {
       if (timerId) clearTimeout(timerId);
     };
   }, []);
-
 
   return (
     <View style={styles.mainContainer}>
@@ -99,7 +98,7 @@ const SignUpScreen = () => {
               }
               try {
                 const res = await axios.post(
-                  "http://ser.iptime.org:8000/email/request",
+                  `${API_BASE_URL}/email/request`,
                   { email },
                   {
                     headers: {
@@ -168,7 +167,7 @@ const SignUpScreen = () => {
                 }
                 try {
                   const res = await axios.post(
-                    "http://ser.iptime.org:8000/email/verify",
+                    `${API_BASE_URL}/email/verify`,
                     { email, code },
                     {
                       headers: {
@@ -294,7 +293,7 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await axios.post("http://ser.iptime.org:8000/users/register", 
+                const res = await axios.post(`${API_BASE_URL}/users/register`, 
                   {
                     name: username,
                     email,
