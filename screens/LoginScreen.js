@@ -18,6 +18,7 @@ import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
 
 const LoginScreen = ({ onLogin }) => {
+  const navigation = useNavigation();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
 
