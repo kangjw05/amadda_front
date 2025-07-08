@@ -9,7 +9,7 @@ import MainTabStyles from "../styles/MainTabStyles";
 
 const Tab = createBottomTabNavigator();
 
-export default function MainTabs() {
+export default function MainTabs({ setIsLoggedIn }) {
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
@@ -43,7 +43,9 @@ export default function MainTabs() {
     >
       <Tab.Screen name="PersonalCalendar" component={PersonalCalendarScreen} />
       <Tab.Screen name="GroupList" component={GroupListScreen} />
-      <Tab.Screen name="Settings" component={SettingsScreen} />
+      <Tab.Screen name="Settings">
+        {() => <SettingsScreen setIsLoggedIn={setIsLoggedIn} />}
+      </Tab.Screen>
     </Tab.Navigator>
   );
 }
