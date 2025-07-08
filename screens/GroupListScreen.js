@@ -72,12 +72,12 @@ const GroupListScreen = () => {
     }
 
     try {
+      const creator = await AsyncStorage.getItem("userName");
       // 생성 API 호출
-      const response = await axios.post("http://121.145.169.65:8000/group/create_group", {
+      const response = await axios.post("http://ser.iptime.org:8000/group/create_group", {
         name: groupName,
         password: groupPassword,
-        creatorId: "마정우", // 실제 로그인된 사용자 id 사용
-        participants: ["마정우"]
+        group_color: "group10"
       });
       // 응답 예시: { code: "QWE789" }
       const newCode = response.data.code;
@@ -85,15 +85,13 @@ const GroupListScreen = () => {
       // 그룹 목록에 추가
       const newGroup = {
         name: groupName,
-        creator: "마정우",
+        creator: creator,
         code: newCode,
+        password: groupPassword,
         colorKey: "group10",
       };
       const updatedGroups = [...groupList, newGroup];
       setGroupList(updatedGroups);
-
-      // 필요하면 AsyncStorage에 저장
-      saveGroupsToStorage(updatedGroups);
 
       closeModal();
     } catch (error) {
@@ -110,7 +108,7 @@ const GroupListScreen = () => {
     }
 
     try {
-      const response = await axios.post("http://121.145.169.65:8000/group/register", {
+      const response = await axios.post("http://ser.iptime.org:8000/group/register", {
         code: groupCode,
         password: groupPassword
       });
@@ -137,8 +135,41 @@ const GroupListScreen = () => {
 
   const loadGroups = async () => {
     try {
-      const response = await axios.get("http://121.145.169.65:8000/group/search_group");
-      setGroupList(response.data);
+      const token = await AsyncStorage.getItem("accessToken");
+
+      // 1) 내 그룹 코드 리스트
+      const infoResponse = await axios.get("http://ser.iptime.org:8000/users/info", {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const myGroupCodes = infoResponse.data.groups || [];
+
+      // 2) 그룹 코드로 상세 정보 요청
+      const detailedGroups = [];
+      for (const g of myGroupCodes) {
+        const detailResponse = await axios.get(
+          `http://ser.iptime.org:8000/group/search_group`,
+          {
+            params: { code: g.code }
+          }
+        );
+
+        const groupData = detailResponse.data;
+
+        // FlatList에 맞게 가공
+        detailedGroups.push({
+          name: groupData.name,
+          creator: groupData.creator,
+          code: groupData.code,
+          colorKey: groupData.group_color
+        });
+      }
+
+      // 3) state에 저장
+      setGroupList(detailedGroups);
+
     } catch (error) {
       console.error("그룹 리스트 불러오기 실패:", error);
       Alert.alert("에러", "그룹 리스트를 불러오지 못했습니다.");
@@ -156,8 +187,8 @@ const GroupListScreen = () => {
     );
   };
 
-  const handleLeaveGroup = (group) => {
-    const currentUserId = "마정우"; // TODO: 실제 로그인 사용자 정보로 교체
+  const handleLeaveGroup = async (group) => {
+    const currentUserId = await AsyncStorage.getItem("accessToken"); // TODO: 실제 로그인 사용자 정보로 교체
 
     if (group.creator === currentUserId) {
       // 그룹 생성자인 경우 그룹 삭제 로직
@@ -192,10 +223,9 @@ const GroupListScreen = () => {
                       }
                       try {
                         const response = await axios.post(
-                          "http://121.145.169.65:8000/group/del_group",
+                          "http://ser.iptime.org:8000/group/del_group",
                           {
                             code: group.code,
-                            userId: currentUserId,
                           }
                         );
                         if (response.data.success) {
@@ -229,13 +259,16 @@ const GroupListScreen = () => {
             style: "destructive",
             onPress: async () => {
               try {
-                const response = await axios.get(
-                  "http://121.145.169.65:8000/group/out_group",
+                const token = await AsyncStorage.getItem("accessToken");
+                const response = await axios.post(
+                  "http://ser.iptime.org:8000/group/out_group",
                   {
-                    params: {
-                      code: group.code,
-                      userId: currentUserId,
-                    },
+                    code: group.code
+                  },
+                  {
+                    headers: {
+                      Authorization: `Bearer ${token}`
+                    }
                   }
                 );
                 if (response.data.success) {
