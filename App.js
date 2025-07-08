@@ -6,9 +6,14 @@ import { createStackNavigator } from "@react-navigation/stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 import LoginScreen from "./screens/LoginScreen";
+import FindPw from "./screens/FindPwScreen";
+import SignUp from "./screens/SignUpScreen";
 import MainTab from "./navigation/MainTab";
 import { AuthProvider } from "./context/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+
+import GroupScreen from "./screens/GroupScreen";
+
 
 const Stack = createNativeStackNavigator();
 
@@ -53,6 +58,7 @@ const App = () => {
           </Stack.Navigator>
         </NavigationContainer>
       </AuthProvider>
+
     </GestureHandlerRootView>
   );
 };

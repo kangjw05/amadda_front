@@ -46,7 +46,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   const [isEditingAccount, setIsEditingAccount] = useState(false);
   const [isEditingPassword, setisEditingPassword] = useState(false);
   const [tempPassword, setTempPassword] = useState("");
-  const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [checkPassword, setCheckPassword] = useState("");
 
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
@@ -75,14 +74,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     }
   };
 
-  const getMaskedPassword = (password) => {
-    if (!password) return "";
-    if (password.length <= 3) return "*".repeat(password.length);
-    const visible = password.slice(0, 3);
-    const hidden = "*".repeat(password.length - 3);
-    return visible + hidden;
-  };
-
   const openPasswordModal = () => {
     setPassword("");
     setTempPassword("");
@@ -104,18 +95,18 @@ const SettingScreen = ({ setIsLoggedIn }) => {
         "비밀번호 변경 오류",
         "새 비밀번호가 현재 비밀번호와 동일합니다."
       );
+
       return;
     }
     if (password !== accountData.password) {
       Alert.alert("비밀번호 오류", "현재 비밀번호가 일치하지 않습니다.");
       return;
     }
-    const newAccountData = {
+      */}
+    {/*const newAccountData = {
       ...accountData,
       password: tempPassword,
-    };
-    setAccountData(newAccountData);
-    await saveAccountData(newAccountData);
+    };*/}
     setisEditingPassword(false);
   };
 
@@ -136,7 +127,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   const [accountData, setAccountData] = useState({
     account: "마정우",
     email: "majw.naver.com",
-    password: "1234",
   });
 
   const tempAccount = accountData.account;
@@ -198,6 +188,12 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   };
 
   const deleteCategory = async () => {
+    // id가 1이면(기타 카테고리) 삭제 막기
+    if (editingCategory.id === 1) {
+      Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
+      return;
+    }
+
     const newList = categoriesList.filter(
       (cat) => cat.id !== editingCategory.id
     );
@@ -237,7 +233,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       Alert.alert("오류", "서버에 연결할 수 없습니다.");
     }
   };
-
   return (
     <View style={styles.fullcontainer}>
       <View>
@@ -293,130 +288,44 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               </View>
             </View>
 
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>비밀번호</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.input}>
-                  {getMaskedPassword(accountData.password)}
-                </Text>
-                <TouchableOpacity onPress={() => openPasswordModal()}>
-                  <Image
-                    source={require("../assets/images/pencilIcon.png")}
-                    style={styles.icon}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
           </View>
         </View>
-        <Modal
-          visible={isEditingPassword}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setisEditingPassword(false)}
-        >
-          <TouchableWithoutFeedback onPress={() => setisEditingPassword(false)}>
-            <View style={styles.modalOverlay}>
-              <TouchableWithoutFeedback>
-                <View style={styles.modalContainer}>
-                  <View style={styles.modalHeader}>
-                    <Text style={styles.modalTitle}>비밀번호 변경</Text>
-                  </View>
-                  <Text style={styles.modalLabel}>현재 비밀번호</Text>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      placeholder="현재 비밀번호"
-                      value={password}
-                      onChangeText={setPassword}
-                      style={styles.modalInput}
-                      maxLength={20}
-                    />
-                  </View>
-                  <Text style={styles.modalLabel}>새 비밀번호</Text>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      placeholder="새 비밀번호"
-                      value={tempPassword}
-                      onChangeText={setTempPassword}
-                      style={styles.modalInput}
-                      maxLength={20}
-                    />
-                  </View>
-                  <Text style={styles.modalLabel}>새 비밀번호 확인</Text>
-                  <View style={styles.inputContainer}>
-                    <TextInput
-                      placeholder="새 비밀번호 확인"
-                      value={checkPassword}
-                      onChangeText={setCheckPassword}
-                      style={styles.modalInput}
-                      maxLength={20}
-                    />
-                    {tempPassword !== checkPassword ||
-                    tempPassword === "" ||
-                    checkPassword === "" ? (
-                      <Image
-                        source={require("../assets/images/checkBoxOutlineIcon.png")}
-                        style={styles.checkIcon}
-                      />
-                    ) : (
-                      <Image
-                        source={require("../assets/images/checkBoxIcon.png")}
-                        style={styles.checkIcon}
-                      />
-                    )}
-                  </View>
-                  <View style={styles.buttonContainer}>
-                    <TouchableOpacity
-                      onPress={() => setisEditingPassword(false)}
-                      style={styles.cancelButton}
-                    >
-                      <Text style={styles.actionButtonText}>취소</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      onPress={() => savePassword()}
-                      style={styles.actionButton}
-                    >
-                      <Text style={styles.actionButtonText}>변경</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
+      </View>
+      <View style={styles.information}>
+        <View style={styles.leftpannel}>
+          <Image
+            source={require("../assets/images/tagIcon.png")}
+            style={styles.icon}
+          />
+        </View>
+        <View style={styles.rightpannel}>
+          <View style={styles.inputRow}>
+            <View style={styles.labelContainer}>
+            <Text style={styles.categoryLabel}>카테고리</Text>
+            <TouchableOpacity 
+            onPress={openCategoryModal}
+            style={styles.addCategoryButton}>
+              <Image
+                source={require("../assets/images/addIcon.png")}
+                style={styles.addIcon} 
+              />
+            </TouchableOpacity>
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-        <View style={styles.information}>
-          <View style={styles.leftpannel}>
-            <Image
-              source={require("../assets/images/tagIcon.png")}
-              style={styles.icon}
-            />
-          </View>
-          <View style={styles.rightpannel}>
-            <View style={styles.inputRow}>
-              <View style={styles.labelContainer}>
-                <Text style={styles.categoryLabel}>카테고리</Text>
-                <TouchableOpacity
-                  onPress={openCategoryModal}
-                  style={styles.addCategoryButton}
-                >
-                  <Image
-                    source={require("../assets/images/addIcon.png")}
-                    style={styles.addIcon}
-                  />
-                </TouchableOpacity>
-              </View>
-              <View style={styles.categoryContainer}>
-                <FlatList
-                  data={categoriesList}
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      onPress={() => {
-                        setEditingCategory(item);
-                        setEditingCategoryName(item.name);
-                        setEditingColorKey(item.colorKey);
-                        setIsEditCategoryModalVisible(true);
-                      }}
-                      style={styles.categoryItem}
+            <View style={styles.categoryContainer}>
+              <FlatList
+                data={categoriesList}
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    onPress={() => {
+                    setEditingCategory(item);
+                    setEditingCategoryName(item.name);
+                    setEditingColorKey(item.colorKey);
+                    setIsEditCategoryModalVisible(true);
+                    }}
+                    style={styles.categoryItem}
+                  >
+                    <Text
+                      style={styles.categoryText}
                     >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
@@ -548,7 +457,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                       </TouchableOpacity>
                     ))}
                   </View>
-
                   <View style={styles.buttonContainer}>
                     <TouchableOpacity
                       onPress={deleteCategory}
@@ -564,33 +472,33 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     </TouchableOpacity>
                   </View>
                 </View>
-              </TouchableWithoutFeedback>
+                </TouchableWithoutFeedback>
+              </View>
+            </TouchableWithoutFeedback>
+          </Modal>
+          <TouchableOpacity style={styles.information}>
+            <View style={styles.leftpannel}>
+              <Image
+                source={require("../assets/images/lockIcon.png")}
+                style={styles.lockIcon}
+              />
             </View>
-          </TouchableWithoutFeedback>
-        </Modal>
-        <TouchableOpacity style={styles.information}>
-          <View style={styles.leftpannel}>
-            <Image
-              source={require("../assets/images/lockIcon.png")}
-              style={styles.lockIcon}
-            />
-          </View>
-          <View style={styles.rightpannel}>
-            <View style={styles.inputRow}>
-              <Text style={styles.findPWFont}>비밀번호 찾기</Text>
+            <View style={styles.rightpannel}>
+              <View style={styles.inputRow}>
+                <Text style={styles.findPWFont}>비밀번호 변경</Text>
             </View>
-          </View>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.information} onPress={logout}>
-          <View style={styles.leftpannel}>
-            <Image
-              source={require("../assets/images/logoutIcon.png")}
-              style={styles.outIcon}
-            />
-          </View>
-          <View style={styles.rightpannel}>
-            <View style={styles.inputRow}>
-              <Text style={styles.outText}>로그아웃</Text>
+            </View>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.information}>
+            <View style={styles.leftpannel}>
+              <Image
+                source={require("../assets/images/logoutIcon.png")}
+                style={styles.outIcon}
+              />
+            </View>
+            <View style={styles.rightpannel}>
+              <View style={styles.inputRow}>
+                <Text style={styles.outText}>로그아웃</Text>
             </View>
           </View>
         </TouchableOpacity>

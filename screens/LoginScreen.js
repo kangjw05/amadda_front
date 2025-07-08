@@ -131,7 +131,7 @@ const LoginScreen = ({ onLogin }) => {
 
       <View style={styles.container_login1}>
         <Image
-          source={require("../assets/Tab/Login_ID.png")}
+          source={require("../assets/images/personIcon.png")}
           style={styles.Login_idpw} //아직 Login_id 스타일 없음.
         />
         <TextInput
@@ -144,7 +144,7 @@ const LoginScreen = ({ onLogin }) => {
 
       <View style={styles.container_login1}>
         <Image
-          source={require("../assets/Tab/Login_PW.png")}
+          source={require("../assets/images/Lock.png")}
           style={styles.Login_idpw} //아직 Login_pw 스타일 없음.
         />
         <TextInput
@@ -163,13 +163,13 @@ const LoginScreen = ({ onLogin }) => {
       </View>
 
       <View style={styles.container_fpw_join}>
-        <TouchableOpacity onPress={() => console.log("비밀번호 찾기")}>
+        <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
           <Text style={styles.fpw}>비밀번호를 잊으셨나요?</Text>
         </TouchableOpacity>
 
         <Text></Text>
 
-        <TouchableOpacity onPress={() => console.log("회원가입")}>
+        <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.join}>회원이 아니신가요?</Text>
         </TouchableOpacity>
       </View>
