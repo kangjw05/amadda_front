@@ -15,6 +15,7 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import GroupScreen from "./screens/GroupScreen";
 import FindPwScreen from "./screens/FindPwScreen";
 import SignUpScreen from "./screens/SignUpScreen";
+import ChangePwScreen from "./screens/changePwScreen";
 
 
 const Stack = createNativeStackNavigator();
@@ -59,20 +60,29 @@ const App = () => {
           <Stack.Navigator
             screenOptions={{ 
               animation: "none", 
-              headerShown: false }}
+              headerShown: true }}
           >
             {!isLoggedIn ? (
               <>
-              <Stack.Screen name="LoginScreen">
+              <Stack.Screen name="LoginScreen" headerShown="false">
                 {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
               </Stack.Screen>
-              <Stack.Screen name="FindPw" component={FindPwScreen} />
-              <Stack.Screen name="SignUp" component={SignUpScreen} />
+              <Stack.Screen name="FindPw" component={FindPwScreen} headerShown="false" />
+              <Stack.Screen name="SignUp" component={SignUpScreen} headerShown="false" />
               </>
             ) : (
-              <Stack.Screen name="Main">
+              <>
+              <Stack.Screen name="Main" options={{ headerShown: false }}>
                 {() => <MainTab setIsLoggedIn={setIsLoggedIn} />}
               </Stack.Screen>
+              <Stack.Screen
+                name="ChangePw"
+                component={ChangePwScreen}
+                options={{
+                  title: "비밀번호 변경",
+                }}
+              />
+              </>
             )}
           </Stack.Navigator>
         </NavigationContainer>
