@@ -102,11 +102,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       Alert.alert("비밀번호 오류", "현재 비밀번호가 일치하지 않습니다.");
       return;
     }
-      */}
-    {/*const newAccountData = {
-      ...accountData,
-      password: tempPassword,
-    };*/}
     setisEditingPassword(false);
   };
 
@@ -349,9 +344,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     }}
                     style={styles.categoryItem}
                   >
-                    <Text
-                      style={styles.categoryText}
-                    >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
                         style={[
@@ -524,8 +516,8 @@ const SettingScreen = ({ setIsLoggedIn }) => {
             <View style={styles.rightpannel}>
               <View style={styles.inputRow}>
                 <Text style={styles.outText}>로그아웃</Text>
+              </View>
             </View>
-          </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.information}>
           <View style={styles.leftpannel}>
