@@ -105,7 +105,7 @@ const LoginScreen = ({ onLogin }) => {
         await AsyncStorage.setItem("accessToken", result.access_token);
 
         const protectedRes = await authFetch(
-          "http://ser.iptime.org:8000/users/me"
+          "http://ser.iptime.org:8000/users/info"
         );
         const protectedData = await protectedRes.json();
         console.log("🔒 보호된 유저 데이터:", protectedData);
