@@ -22,6 +22,7 @@ const SignUpScreen = () => {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
+
   useEffect(() => {
     let timerId;
 
@@ -57,7 +58,6 @@ const SignUpScreen = () => {
       if (timerId) clearTimeout(timerId);
     };
   }, []);
-
   return (
     <View style={styles.mainContainer}>
       {/* 로고 */}
@@ -277,7 +277,6 @@ const SignUpScreen = () => {
             style={styles.inputIconRight}
           />
         </View>
-
         {/* 회원가입 버튼 */}
         <View style={styles.buttonPart}>
           <TouchableOpacity
@@ -327,7 +326,7 @@ const SignUpScreen = () => {
 
       {/* 하단 링크 */}
       <View style={styles.footerLinks}>
-        <TouchableOpacity onPress={() => console.log("비밀번호 찾기")}>
+        <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
           <Text style={styles.footerLinkText}>비밀번호를 잊으셨나요?</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
