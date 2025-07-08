@@ -30,7 +30,7 @@ const SignUpScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await axios.get("http://ser.iptime.org:8000/email/ttl", {
           params: { email: storedEmail },
         });
 
@@ -99,7 +99,7 @@ const SignUpScreen = () => {
               }
               try {
                 const res = await axios.post(
-                  `${API_BASE_URL}/email/request`,
+                  "http://ser.iptime.org:8000/email/request",
                   { email },
                   {
                     headers: {
@@ -107,7 +107,9 @@ const SignUpScreen = () => {
                     }
                   }
                 );
-                if (res.data.success) {
+
+                // 상태 코드가 200이면 성공 처리
+                if (res.status === 200) {
                   alert("인증 메일이 발송되었습니다.");
                   const sendTime = Date.now();
                   await AsyncStorage.multiSet([
@@ -115,11 +117,17 @@ const SignUpScreen = () => {
                     ["emailAddress", email],
                   ]);
                 } else {
-                  alert("이메일 발송에 실패했습니다.");
+                  alert("예상치 못한 응답이 왔습니다.");
                 }
+
               } catch (err) {
-                console.error(err);
-                alert("서버 오류가 발생했습니다.");
+                if (err.response?.status === 422) {
+                  alert("잘못된 이메일 형식입니다.");
+                } else {
+                  console.error("서버 응답 상태:", err.response?.status);
+                  console.error("서버 응답 데이터:", err.response?.data);
+                  alert("서버 오류가 발생했습니다.");
+                }
               }
             }}
           >
@@ -160,7 +168,7 @@ const SignUpScreen = () => {
                 }
                 try {
                   const res = await axios.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "http://ser.iptime.org:8000/email/verify",
                     { email, code },
                     {
                       headers: {
@@ -168,16 +176,27 @@ const SignUpScreen = () => {
                       }
                     }
                   );
-                  if (res.data.success) {
-                    setCodeVerified(true);
-                    alert("인증이 완료되었습니다.");
-                  } else {
-                    alert("인증 코드가 올바르지 않습니다.");
+                    if (res.status === 200) {
+                      setCodeVerified(true);
+                      alert("인증이 완료되었습니다.");
+                    } else {
+                      // 혹시 다른 2xx 상태가 있을 경우 대비
+                      alert("예상치 못한 응답이 왔습니다.");
+                    }
+
+                  } catch (err) {
+                    // 상태 코드로 분기
+                    if (err.response?.status === 409) {
+                      setCodeVerified(true);
+                      alert("이미 인증된 이메일입니다.");
+                    } else if (err.response?.status === 422) {
+                      alert("인증 코드가 올바르지 않습니다.");
+                    } else {
+                      console.error("서버 응답 상태:", err.response?.status);
+                      console.error("서버 응답 데이터:", err.response?.data);
+                      alert("서버 오류가 발생했습니다.");
+                    }
                   }
-                } catch (err) {
-                  console.error(err);
-                  alert("서버 오류가 발생했습니다.");
-                }
               }}
             >
               <Text style={styles.actionButtonText}>확인</Text>
@@ -275,7 +294,7 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await axios.post(`${API_BASE_URL}/users/register`, 
+                const res = await axios.post("http://ser.iptime.org:8000/users/register", 
                   {
                     name: username,
                     email,
@@ -287,7 +306,7 @@ const SignUpScreen = () => {
                     }
                   }
                 );
-                if (res.data.success) {
+                if (res.status === 200) {
                   alert("회원가입이 완료되었습니다.");
                   navigation.navigate("LoginScreen");
                 } else {
