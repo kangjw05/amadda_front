@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext} from "react";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -19,9 +19,11 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import styles from "../styles/SettingScreenStyles";
 import Header from "../components/header";
 import LoginScreen from "./LoginScreen";
+import { AuthContext } from "../context/AuthContext";
 
 const SettingScreen = ({ setIsLoggedIn }) => {
   const navigation = useNavigation();
+  const {userInfo} = useContext(AuthContext);
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -102,11 +104,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       Alert.alert("비밀번호 오류", "현재 비밀번호가 일치하지 않습니다.");
       return;
     }
-      */}
-    {/*const newAccountData = {
-      ...accountData,
-      password: tempPassword,
-    };*/}
     setisEditingPassword(false);
   };
 
@@ -125,8 +122,8 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   };
 
   const [accountData, setAccountData] = useState({
-    account: "마정우",
-    email: "majw.naver.com",
+    account: userInfo?.name,
+    email: userInfo?.email,
   });
 
   const tempAccount = accountData.account;
@@ -243,51 +240,44 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       </View>
       <ScrollView
         style={{ flex: 1, backgroundColor: themeColors.bg }}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        <View style={styles.information}>
-          <View style={styles.leftpannel}>
-            <Image
-              source={require("../assets/images/userIcon.png")}
-              style={styles.icon}
-            />
-          </View>
-
-          <View style={styles.rightpannel}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>계정</Text>
-              <View style={styles.inputContainer}>
-                {isEditingAccount ? (
-                  <TextInput
-                    placeholder={tempAccount}
-                    value={account}
-                    onChangeText={setAccount}
-                    onBlur={saveAccount}
-                    autoFocus
-                    style={styles.input}
-                    maxLength={16}
-                  />
-                ) : (
-                  <Text style={styles.input}>{accountData.account}</Text>
-                )}
-                <TouchableOpacity
-                  onPress={() => setIsEditingAccount(!isEditingAccount)}
-                >
-                  <Image
-                    source={require("../assets/images/pencilIcon.png")}
-                    style={styles.icon}
-                  />
-                </TouchableOpacity>
-              </View>
+        contentContainerStyle={{ paddingBottom: 20 }}>
+      <View style={styles.information}>
+        <View style={styles.leftpannel}>
+          <Image
+            source={require("../assets/images/userIcon.png")}
+            style={styles.icon}
+          />
+        </View>
+        <View style={styles.rightpannel}>
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>계정</Text>
+            <View style={styles.inputContainer}>
+            {isEditingAccount ? (
+                <TextInput
+                  placeholder={tempAccount}
+                  value={account}
+                  onChangeText={setAccount}
+                  onBlur={saveAccount}
+                  autoFocus
+                  style={styles.input}
+                  maxLength={16}
+                />
+              ) : (
+                <Text style={styles.input}>{accountData.account}</Text>
+              )}
+            <TouchableOpacity onPress={() => setIsEditingAccount(!isEditingAccount)}>
+              <Image
+                source={require("../assets/images/pencilIcon.png")}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
             </View>
-
             <View style={styles.inputRow}>
               <Text style={styles.label}>이메일</Text>
               <View style={styles.inputContainer}>
                 <Text style={styles.input}>{accountData.email}</Text>
               </View>
             </View>
-
           </View>
         </View>
       </View>
@@ -324,9 +314,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     }}
                     style={styles.categoryItem}
                   >
-                    <Text
-                      style={styles.categoryText}
-                    >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
                         style={[
@@ -476,7 +463,9 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               </View>
             </TouchableWithoutFeedback>
           </Modal>
-          <TouchableOpacity style={styles.information}>
+          <TouchableOpacity 
+          style={styles.information}
+          onPress={() => navigation.navigate("ChangePw")}>
             <View style={styles.leftpannel}>
               <Image
                 source={require("../assets/images/lockIcon.png")}
@@ -489,18 +478,18 @@ const SettingScreen = ({ setIsLoggedIn }) => {
             </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.information}>
-            <View style={styles.leftpannel}>
-              <Image
-                source={require("../assets/images/logoutIcon.png")}
-                style={styles.outIcon}
-              />
-            </View>
-            <View style={styles.rightpannel}>
-              <View style={styles.inputRow}>
-                <Text style={styles.outText}>로그아웃</Text>
-            </View>
+        <TouchableOpacity style={styles.information} onPress={logout}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/logoutIcon.png")}
+              style={styles.outIcon}
+            />
           </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <Text style={styles.outText}>로그아웃</Text>
+              </View>
+            </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.information}>
           <View style={styles.leftpannel}>
@@ -509,7 +498,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               style={styles.outIcon}
             />
           </View>
-
           <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
               <Text style={styles.outText}>앱 탈퇴</Text>

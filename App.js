@@ -13,9 +13,23 @@ import { AuthProvider } from "./context/AuthContext";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 import GroupScreen from "./screens/GroupScreen";
+import FindPwScreen from "./screens/FindPwScreen";
+import SignUpScreen from "./screens/SignUpScreen";
+import ChangePwScreen from "./screens/changePwScreen";
 
 
 const Stack = createNativeStackNavigator();
+
+const AuthStack = ({ onLogin }) => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="LoginScreen">
+      {() => <LoginScreen onLogin={onLogin} />}
+    </Stack.Screen>
+    <Stack.Screen name="FindPw" component={FindPwScreen} />
+    <Stack.Screen name="SignUp" component={SignUpScreen} />
+  </Stack.Navigator>
+);
+
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -44,16 +58,31 @@ const App = () => {
       <AuthProvider>
         <NavigationContainer>
           <Stack.Navigator
-            screenOptions={{ animationEnabled: false, headerShown: false }}
+            screenOptions={{ 
+              animation: "none", 
+              headerShown: true }}
           >
             {!isLoggedIn ? (
-              <Stack.Screen name="LoginScreen">
+              <>
+              <Stack.Screen name="LoginScreen" headerShown="false">
                 {() => <LoginScreen onLogin={() => setIsLoggedIn(true)} />}
               </Stack.Screen>
+              <Stack.Screen name="FindPw" component={FindPwScreen} headerShown="false" />
+              <Stack.Screen name="SignUp" component={SignUpScreen} headerShown="false" />
+              </>
             ) : (
-              <Stack.Screen name="Main">
+              <>
+              <Stack.Screen name="Main" options={{ headerShown: false }}>
                 {() => <MainTab setIsLoggedIn={setIsLoggedIn} />}
               </Stack.Screen>
+              <Stack.Screen
+                name="ChangePw"
+                component={ChangePwScreen}
+                options={{
+                  title: "비밀번호 변경",
+                }}
+              />
+              </>
             )}
           </Stack.Navigator>
         </NavigationContainer>
