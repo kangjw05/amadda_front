@@ -506,16 +506,16 @@ const SettingScreen = ({ setIsLoggedIn }) => {
             </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.information}>
-            <View style={styles.leftpannel}>
-              <Image
-                source={require("../assets/images/logoutIcon.png")}
-                style={styles.outIcon}
-              />
-            </View>
-            <View style={styles.rightpannel}>
-              <View style={styles.inputRow}>
-                <Text style={styles.outText}>로그아웃</Text>
+        <TouchableOpacity style={styles.information} onPress={logout}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/logoutIcon.png")}
+              style={styles.outIcon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <Text style={styles.outText}>로그아웃</Text>
               </View>
             </View>
         </TouchableOpacity>
