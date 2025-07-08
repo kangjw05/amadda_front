@@ -243,14 +243,39 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       </View>
       <ScrollView
         style={{ flex: 1, backgroundColor: themeColors.bg }}
-        contentContainerStyle={{ paddingBottom: 20 }}
-      >
-        <View style={styles.information}>
-          <View style={styles.leftpannel}>
-            <Image
-              source={require("../assets/images/userIcon.png")}
-              style={styles.icon}
-            />
+        contentContainerStyle={{ paddingBottom: 20 }}>
+      <View style={styles.information}>
+        <View style={styles.leftpannel}>
+          <Image
+            source={require("../assets/images/userIcon.png")}
+            style={styles.icon}
+          />
+        </View>
+
+        <View style={styles.rightpannel}>
+          <View style={styles.inputRow}>
+            <Text style={styles.label}>계정</Text>
+            <View style={styles.inputContainer}>
+            {isEditingAccount ? (
+                <TextInput
+                  placeholder={tempAccount}
+                  value={account}
+                  onChangeText={setAccount}
+                  onBlur={saveAccount}
+                  autoFocus
+                  style={styles.input}
+                  maxLength={16}
+                />
+              ) : (
+                <Text style={styles.input}>{accountData.account}</Text>
+              )}
+            <TouchableOpacity onPress={() => setIsEditingAccount(!isEditingAccount)}>
+              <Image
+                source={require("../assets/images/pencilIcon.png")}
+                style={styles.icon}
+              />
+            </TouchableOpacity>
+            </View>
           </View>
 
           <View style={styles.rightpannel}>
