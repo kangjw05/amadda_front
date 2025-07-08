@@ -190,7 +190,10 @@ const SignUpScreen = () => {
                       alert("이미 인증된 이메일입니다.");
                     } else if (err.response?.status === 422) {
                       alert("인증 코드가 올바르지 않습니다.");
-                    } else {
+                    } else if (err.response?.status === 400) {
+                      alert("인증 코드가 일치하지 않습니다.");
+                    }
+                    else {
                       console.error("서버 응답 상태:", err.response?.status);
                       console.error("서버 응답 데이터:", err.response?.data);
                       alert("서버 오류가 발생했습니다.");
