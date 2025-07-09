@@ -4,6 +4,7 @@ import LoginScreen from "./screens/LoginScreen";
 import FindPwScreen from "./screens/FindPwScreen";
 import SignUpScreen from "./screens/SignUpScreen";
 import MainTab from "./navigation/MainTab";
+import DeluserScreen from "./screens/DeluserScreen";
 import ChangePwScreen from "./screens/changePwScreen";
 import { AuthContext } from "./context/AuthContext";
 
@@ -47,6 +48,9 @@ export default function RootNavigator() {
               title: "비밀번호 변경",
             }}
           />
+          <Stack.Screen name="Deluser" options={{ title: "회원 탈퇴" }}>
+            {() => <DeluserScreen setIsLoggedIn={setIsLoggedIn} />}
+          </Stack.Screen>
         </>
       )}
     </Stack.Navigator>
