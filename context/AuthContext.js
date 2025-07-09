@@ -1,5 +1,7 @@
 import React, { createContext, useState, useEffect } from "react";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
+
+import { API_BASE_URL } from "@env";
 
 export const AuthContext = createContext();
 
@@ -10,10 +12,10 @@ export const AuthProvider = ({ children }) => {
   // 앱 시작 시 userInfo 복구
   useEffect(() => {
     const restoreUserInfo = async () => {
-      const token = await AsyncStorage.getItem("accessToken");
+      const token = await SecureStore.getItemAsync("accessToken");
       if (token) {
         try {
-          let res = await fetch("http://ser.iptime.org:8000/users/info", {
+          let res = await fetch(`${API_BASE_URL}/users/info`, {
             headers: {
               Authorization: `Bearer ${token}`,
               "Content-Type": "application/json",
@@ -22,7 +24,7 @@ export const AuthProvider = ({ children }) => {
           if (res.status === 401) {
             // 토큰 만료 시 refresh
             const refreshRes = await fetch(
-              "http://ser.iptime.org:8000/users/refresh",
+              `${API_BASE_URL}/users/refresh`,
               {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -31,10 +33,10 @@ export const AuthProvider = ({ children }) => {
             );
             const refreshData = await refreshRes.json();
             if (refreshRes.ok) {
-              await AsyncStorage.setItem("accessToken", refreshData.access);
-              res = await fetch("http://ser.iptime.org:8000/users/info", {
+              await SecureStore.setItemAsync("accessToken", refreshData.access_token);
+              res = await fetch(`${API_BASE_URL}/users/info`, {
                 headers: {
-                  Authorization: `Bearer ${refreshData.access}`,
+                  Authorization: `Bearer ${refreshData.access_token}`,
                   "Content-Type": "application/json",
                 },
               });
