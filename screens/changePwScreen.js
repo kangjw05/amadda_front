@@ -57,7 +57,6 @@ const ChangePwScreen = () => {
     };
   }, []);
 
-
   return (
     <ScrollView contentContainerStyle={styles.changePWmainContainer}>
       {/* 로고 */}
@@ -102,8 +101,8 @@ const ChangePwScreen = () => {
                   { email },
                   {
                     headers: {
-                      "Content-Type": "application/json"
-                    }
+                      "Content-Type": "application/json",
+                    },
                   }
                 );
 
@@ -118,7 +117,6 @@ const ChangePwScreen = () => {
                 } else {
                   alert("예상치 못한 응답이 왔습니다.");
                 }
-
               } catch (err) {
                 if (err.response?.status === 422) {
                   alert("잘못된 이메일 형식입니다.");
@@ -172,34 +170,32 @@ const ChangePwScreen = () => {
                     { email, code },
                     {
                       headers: {
-                        "Content-Type": "application/json"
-                      }
+                        "Content-Type": "application/json",
+                      },
                     }
                   );
-                    if (res.status === 200) {
-                      setCodeVerified(true);
-                      alert("인증이 완료되었습니다.");
-                    } else {
-                      // 혹시 다른 2xx 상태가 있을 경우 대비
-                      alert("예상치 못한 응답이 왔습니다.");
-                    }
-
-                  } catch (err) {
-                    // 상태 코드로 분기
-                    if (err.response?.status === 409) {
-                      setCodeVerified(true);
-                      alert("이미 인증된 이메일입니다.");
-                    } else if (err.response?.status === 422) {
-                      alert("인증 코드가 올바르지 않습니다.");
-                    } else if (err.response?.status === 400) {
-                      alert("인증 코드가 일치하지 않습니다.");
-                    }
-                    else {
-                      console.error("서버 응답 상태:", err.response?.status);
-                      console.error("서버 응답 데이터:", err.response?.data);
-                      alert("서버 오류가 발생했습니다.");
-                    }
+                  if (res.status === 200) {
+                    setCodeVerified(true);
+                    alert("인증이 완료되었습니다.");
+                  } else {
+                    // 혹시 다른 2xx 상태가 있을 경우 대비
+                    alert("예상치 못한 응답이 왔습니다.");
                   }
+                } catch (err) {
+                  // 상태 코드로 분기
+                  if (err.response?.status === 409) {
+                    setCodeVerified(true);
+                    alert("이미 인증된 이메일입니다.");
+                  } else if (err.response?.status === 422) {
+                    alert("인증 코드가 올바르지 않습니다.");
+                  } else if (err.response?.status === 400) {
+                    alert("인증 코드가 일치하지 않습니다.");
+                  } else {
+                    console.error("서버 응답 상태:", err.response?.status);
+                    console.error("서버 응답 데이터:", err.response?.data);
+                    alert("서버 오류가 발생했습니다.");
+                  }
+                }
               }}
             >
               <Text style={styles.actionButtonText}>확인</Text>
@@ -292,7 +288,8 @@ const ChangePwScreen = () => {
                 );
 
                 if (res.status >= 200 && res.status < 300) {
-                  Alert.alert("비밀번호 변경 성공", 
+                  Alert.alert(
+                    "비밀번호 변경 성공",
                     "비밀번호가 성공적으로 변경되었습니다.",
                     { cancelable: false }
                   );

@@ -7,6 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import LoginScreen from "./screens/LoginScreen";
 import FindPwScreen from "./screens/FindPwScreen";
 import SignUpScreen from "./screens/SignUpScreen";
+import DeluserScreen from "./screens/DeluserScreen";
 import MainTab from "./navigation/MainTab";
 import ChangePwScreen from "./screens/changePwScreen";
 import { AuthProvider } from "./context/AuthContext";
@@ -92,10 +93,7 @@ export default function App() {
               </>
             ) : (
               <>
-                <Stack.Screen
-                  name="Main"
-                  options={{ headerShown: false }}
-                >
+                <Stack.Screen name="Main" options={{ headerShown: false }}>
                   {() => <MainTab setIsLoggedIn={setIsLoggedIn} />}
                 </Stack.Screen>
                 <Stack.Screen
@@ -105,6 +103,9 @@ export default function App() {
                     title: "비밀번호 변경",
                   }}
                 />
+                <Stack.Screen name="Deluser" options={{ title: "회원 탈퇴" }}>
+                  {() => <DeluserScreen setIsLoggedIn={setIsLoggedIn} />}
+                </Stack.Screen>
               </>
             )}
           </Stack.Navigator>
