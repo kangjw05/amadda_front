@@ -65,7 +65,7 @@ const GroupListScreen = () => {
     console.log("보내는 데이터:", {
       name: groupName,
       password: groupPassword,
-      group_color: "group1"
+      group_color: "group10"
     });
 
     try {
@@ -205,7 +205,7 @@ const GroupListScreen = () => {
                           Alert.alert("에러", "그룹 삭제에 실패했습니다.");
                         }
                       } catch (error) {
-                        console.error("그룹 삭제 실패:", error);
+                        console.error("그룹 삭제 실패:", error.response.data);
                         Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
                       }
                     },
@@ -286,7 +286,41 @@ const GroupListScreen = () => {
       </View>
 
       {/* 모달 */}
-      {/* ... (기존 모달 그대로) */}
+     <Modal
+        visible={isModalVisible}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={closeModal}
+      >
+        <TouchableWithoutFeedback onPress={closeModal}>
+        <View style={styles.modalOverlay}>
+          <TouchableWithoutFeedback>
+          <View style={styles.modalContainer}>
+            {/* 탭 */}
+            <View style={styles.tabContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  selectedTab === "create" && styles.tabSelected,
+                ]}
+                onPress={() => setSelectedTab("create")}
+              >
+                <Text style={[styles.tabText,
+                  selectedTab === "create" && styles.tabTextSelected
+                ]}>그룹 생성</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.tabButton,
+                  selectedTab === "join" && styles.tabSelected,
+                ]}
+                onPress={() => setSelectedTab("join")}
+              >
+                <Text style={[styles.tabText,
+                  selectedTab === "join" && styles.tabTextSelected
+                ]}>그룹 참가</Text>
+              </TouchableOpacity>
+            </View>
             {/* 내용 */}
             {selectedTab === "create" ? (
               <View>
@@ -399,7 +433,7 @@ const GroupListScreen = () => {
             item.name.toLowerCase().includes(searchText.toLowerCase()) ||
             item.creator.toLowerCase().includes(searchText.toLowerCase())
         )}
-        keyExtractor={(item) => item.code}
+        keyExtractor={(item, index) => item.code || index.toString()}
         renderItem={({ item }) => {
           const colorTheme = groups[item.colorKey] || groups["group1"];
           return (
@@ -412,7 +446,7 @@ const GroupListScreen = () => {
                   source={require("../assets/images/groupIcon.png")} 
                   style={styles.groupIcon}
                   resizeMode="contain"
-                >
+                />
                   <Image
                     source={require("../assets/images/groupIcon.png")}
                     style={styles.groupIcon}
