@@ -11,8 +11,7 @@ import * as SecureStore from "expo-secure-store";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
 import { API_BASE_URL } from "@env";
-import axios from "axios";
-import api from "../api";
+import api from "../api"; // axios 인스턴스 사용
 
 const LoginScreen = ({ onLogin }) => {
   const navigation = useNavigation();
@@ -21,35 +20,34 @@ const LoginScreen = ({ onLogin }) => {
   const { setUserInfo } = useContext(AuthContext);
 
   const login = async () => {
-    try {
-      // 로그인 요청
-      const response = await axios.post(
-        `${API_BASE_URL}/users/login`,
-        `username=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`,
-        {
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
-          withCredentials: true, // 쿠키에 refresh_token 저장
-        }
-      );
+    const formBody = `username=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`;
 
-      const result = response.data;
+    try {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        credentials: "include",
+        body: formBody,
+      });
+
+      const result = await response.json();
       console.log("로그인 응답 result:", result);
 
-      // 서버에서 Access Token 내려주는지 확인
-      if (response.status === 200 && result.access_token) {
-        // Access Token만 저장
+      if (response.ok && result.access_token) {
+        // 토큰 저장
         await SecureStore.setItemAsync("accessToken", String(result.access_token));
-        console.log("Access token 저장 완료");
+        await SecureStore.setItemAsync("refreshToken", String(result.refresh_token));
 
-        // 사용자 정보 가져오기 (api.js에 인터셉터가 Authorization 헤더 자동 추가)
+        // 사용자 정보 가져오기 (api.js에 자동 토큰 넣음 & 재발급)
         const protectedRes = await api.get("/users/info");
         const protectedData = protectedRes.data;
-        console.log("보호된 유저 데이터:", protectedData);
 
-        setUserInfo(protectedData); // 전역 상태 업데이트
-        onLogin(); // 화면 전환
+        console.log("보호된 유저 데이터:", protectedData);
+        setUserInfo(protectedData); // 전역 상태 저장
+        onLogin(); // 로그인 성공 후 이동
       } else {
         console.log("로그인 실패: 응답 비정상 또는 토큰 없음");
+        console.log("로그인 응답 result:", result);
         alert("로그인 실패: " + JSON.stringify(result));
       }
     } catch (err) {
@@ -57,7 +55,6 @@ const LoginScreen = ({ onLogin }) => {
       alert("서버 연결 실패");
     }
   };
-
 
   return (
     <View style={styles.fullcontainer}>
