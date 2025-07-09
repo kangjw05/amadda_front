@@ -20,23 +20,13 @@ import Header from "../components/header";
 import { groups } from "../Colors";
 import { AuthContext } from "../context/AuthContext";
 
-function generateRandomCode(length = 6) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    result += chars[randomIndex];
-  }
-  return result;
-}
-
 const GroupListScreen = () => {
   const { userInfo } = useContext(AuthContext);
-
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState("create"); // "create" or "join"
   const [groupName, setGroupName] = useState("");
-  const [groupCode, setGroupCode] = useState(generateRandomCode());
+  const [groupCode, setGroupCode] = useState("");
+  //const [groupCode, setGroupCode] = useState(generateRandomCode());
   const [groupPassword, setGroupPassword] = useState("");
   const [groupList, setGroupList] = useState([]);
   const [searchText, setSearchText] = useState("");
@@ -47,7 +37,7 @@ const GroupListScreen = () => {
   }, []);
 
   const openModal = () => {
-    setGroupCode(generateRandomCode());
+    //setGroupCode(generateRandomCode());
     setIsModalVisible(true);
   };
 
@@ -72,6 +62,12 @@ const GroupListScreen = () => {
       return;
     }
 
+    console.log("보내는 데이터:", {
+      name: groupName,
+      password: groupPassword,
+      group_color: "group1"
+    });
+
     try {
       const response = await api.post("/group/create_group", {
         name: groupName,
@@ -79,20 +75,22 @@ const GroupListScreen = () => {
         group_color: "group10",
       });
 
+      // 응답 예시: { code: "QWE789" }
       const newCode = response.data.code;
 
       const newGroup = {
         name: groupName,
-        creator: userInfo?.name || "알수없음",
+        creator: userInfo?.name,
         code: newCode,
         password: groupPassword,
         colorKey: "group10",
       };
-
-      setGroupList((prev) => [...prev, newGroup]);
+      const updatedGroups = [...groupList, newGroup];
+      setGroupList(updatedGroups);
       closeModal();
     } catch (error) {
       console.error("그룹 생성 실패:", error);
+      console.error("그룹 생성 실패:", error.response.data);
       Alert.alert("에러", "그룹 생성에 실패했습니다.");
     }
   };
@@ -139,34 +137,41 @@ const GroupListScreen = () => {
             params: { code: g.code },
           });
           const groupData = detailResponse.data;
+
           return {
             name: groupData.name,
             creator: groupData.creator,
             code: groupData.code,
-            colorKey: groupData.group_color,
+            colorKey: groupData.group_color
           };
         })
       );
 
+      // 3) 최종 리스트 저장
       setGroupList(detailedGroups);
     } catch (error) {
+      console.log("✅ infoResponse.data:", infoResponse.data);
       console.error("그룹 리스트 불러오기 실패:", error);
       Alert.alert("에러", "그룹 리스트를 불러오지 못했습니다.");
     }
   };
 
-  const renderRightActions = (group) => (
-    <TouchableOpacity
-      style={styles.leaveButton}
-      onPress={() => handleLeaveGroup(group)}
-    >
-      <Text style={styles.leaveButtonText}>나가기</Text>
-    </TouchableOpacity>
-  );
+  const renderRightActions = (group) => {
+    return (
+      <TouchableOpacity
+        style={styles.leaveButton}
+        onPress={() => handleLeaveGroup(group)}
+      >
+        <Text style={styles.leaveButtonText}>나가기</Text>
+      </TouchableOpacity>
+    );
+  };
 
   const handleLeaveGroup = async (group) => {
-    if (group.creator === userInfo?.name) {
-      // 생성자인 경우 삭제
+    const currentUser = userInfo?.username;
+
+    if (group.creator === currentUser) {
+      // 그룹 생성자인 경우 그룹 삭제 로직
       Alert.alert(
         "그룹 삭제",
         `"${group.name}" 그룹의 생성자입니다.\n이 그룹을 삭제하려면 확인 버튼을 누르세요.`,
@@ -282,7 +287,112 @@ const GroupListScreen = () => {
 
       {/* 모달 */}
       {/* ... (기존 모달 그대로) */}
-
+            {/* 내용 */}
+            {selectedTab === "create" ? (
+              <View>
+                <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>그룹명</Text>
+                <ImageBackground
+                  source={require("../assets/images/inputBox.png")}
+                  style={styles.inputBackground}
+                  imageStyle={{ borderRadius: 7 }}
+                  >
+                <TextInput
+                  value={groupName}
+                  onChangeText={setGroupName}
+                  style={styles.input}
+                  maxLength={20}
+                />
+                </ImageBackground>
+                </View>
+                <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>그룹 비밀번호</Text>
+                <ImageBackground
+                  source={require("../assets/images/inputBox.png")}
+                  style={styles.inputBackground}
+                  imageStyle={{ borderRadius: 7 }}
+                  >
+                <TextInput
+                  value={groupPassword}
+                  onChangeText={setGroupPassword}
+                  style={styles.input}
+                  maxLength={20}
+                />
+                </ImageBackground>
+                </View>
+                {/*<View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>그룹 코드</Text>
+                <ImageBackground
+                  source={require("../assets/images/inputBox.png")}
+                  style={styles.inputBackground}
+                  imageStyle={{ borderRadius: 7 }}
+                  >
+                <TextInput
+                  value={groupCode}
+                  editable={false}
+                  style={styles.input}
+                />
+                <TouchableOpacity onPress={handleCopyCode}>
+                  <ImageBackground source={require("../assets/images/Copy.png")} style={styles.copyIcon} />
+                </TouchableOpacity>
+                </ImageBackground>
+                </View>
+                */}
+                <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleCreateGroup}
+                >
+                  <Text style={styles.actionButtonText}>생성</Text>
+                </TouchableOpacity>
+                </View>
+              </View>
+            ) : (
+              <View>
+                <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>그룹 코드</Text>
+                <ImageBackground
+                  source={require("../assets/images/inputBox.png")}
+                  style={styles.inputBackground}
+                  imageStyle={{ borderRadius: 7 }}
+                  >
+                <TextInput
+                  onChangeText={setGroupCode}
+                  style={styles.input}
+                  maxLength={6}
+                />
+                </ImageBackground>
+                </View>
+                <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>그룹 비밀번호</Text>
+                <ImageBackground
+                  source={require("../assets/images/inputBox.png")}
+                  style={styles.inputBackground}
+                  imageStyle={{ borderRadius: 7 }}
+                  >
+                <TextInput
+                  value={groupPassword}
+                  onChangeText={setGroupPassword}
+                  style={styles.input}
+                  maxLength={20}
+                />
+                </ImageBackground>
+                </View>
+                <View style={styles.buttonContainer}>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={handleJoinGroup}
+                >
+                  <Text style={styles.actionButtonText}>참가</Text>
+                </TouchableOpacity>
+                </View>
+              </View>
+            )}
+          </View>
+          </TouchableWithoutFeedback>
+        </View>
+        </TouchableWithoutFeedback>
+      </Modal>
       <FlatList
         data={groupList.filter(
           (item) =>
@@ -291,15 +401,17 @@ const GroupListScreen = () => {
         )}
         keyExtractor={(item) => item.code}
         renderItem={({ item }) => {
-          const colorTheme = groups[item.colorKey];
+          const colorTheme = groups[item.colorKey] || groups["group1"];
           return (
             <Swipeable renderRightActions={() => renderRightActions(item)}>
-              <TouchableOpacity style={styles.groupItem}>
-                <View
-                  style={[
-                    styles.groupIconContainer,
-                    { backgroundColor: colorTheme.checkbox },
-                  ]}
+            <TouchableOpacity style={styles.groupItem}>
+              <View 
+                style={[styles.groupIconContainer, 
+                { backgroundColor: colorTheme.checkbox }]}>
+                <Image
+                  source={require("../assets/images/groupIcon.png")} 
+                  style={styles.groupIcon}
+                  resizeMode="contain"
                 >
                   <Image
                     source={require("../assets/images/groupIcon.png")}
