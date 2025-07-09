@@ -16,6 +16,7 @@ import {
 import { themeColors, categories, groups } from "../Colors";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
+import { API_BASE_URL } from "@env";
 
 const LoginScreen = ({ onLogin }) => {
   const navigation = useNavigation();
@@ -25,7 +26,7 @@ const LoginScreen = ({ onLogin }) => {
   const { setUserInfo } = useContext(AuthContext);
   const refreshAccessToken = async () => {
     try {
-      const response = await fetch("http://ser.iptime.org:8000/users/refresh", {
+      const response = await fetch(`${API_BASE_URL}/users/refresh`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -91,7 +92,7 @@ const LoginScreen = ({ onLogin }) => {
     )}&password=${encodeURIComponent(pw)}`;
 
     try {
-      const response = await fetch("http://ser.iptime.org:8000/users/login", {
+      const response = await fetch(`${API_BASE_URL}/users/login`, {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         credentials: "include",
@@ -105,15 +106,15 @@ const LoginScreen = ({ onLogin }) => {
         await AsyncStorage.setItem("accessToken", result.access_token);
 
         const protectedRes = await authFetch(
-          "http://ser.iptime.org:8000/users/me"
+          `${API_BASE_URL}/users/info`
         );
         const protectedData = await protectedRes.json();
         console.log("🔒 보호된 유저 데이터:", protectedData);
 
-        setUserInfo(protectedData); // ✅ 전역 상태로 저장
+        setUserInfo(protectedData); // 전역 상태로 저장
         onLogin(); // 로그인 성공 후 이동
       } else {
-        console.log("❌ 로그인 실패: 응답 비정상 또는 토큰 없음");
+        console.log("로그인 실패: 응답 비정상 또는 토큰 없음");
         r;
         alert("로그인 실패: " + JSON.stringify(result));
       }
