@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 import LoginScreen from "./screens/LoginScreen";
 import FindPwScreen from "./screens/FindPwScreen";
@@ -20,7 +21,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   const authFetch = async (url, options = {}) => {
-    let token = await AsyncStorage.getItem("accessToken");
+    let token = await SecureStore.getItemAsync("accessToken");
 
     let response = await fetch(url, {
       ...options,
@@ -44,8 +45,8 @@ export default function App() {
 
       if (!refreshResponse.ok) throw new Error("토큰 갱신 실패");
 
-      await AsyncStorage.setItem("accessToken", refreshResult.access);
-      await AsyncStorage.setItem("refreshToken", refreshResult.refresh_token);
+      await SecureStore.setItemAsync("accessToken", refreshResult.access_token);
+      await SecureStore.setItemAsync("refreshToken", refreshResult.refresh_token);
 
       response = await fetch(url, {
         ...options,
@@ -62,7 +63,7 @@ export default function App() {
 
   useEffect(() => {
     const checkLoginStatus = async () => {
-      const accessToken = await AsyncStorage.getItem("accessToken");
+      const accessToken = await SecureStore.getItemAsync("accessToken");
 
       if (accessToken) {
         try {

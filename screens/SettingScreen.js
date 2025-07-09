@@ -15,6 +15,7 @@ import {
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 import styles from "../styles/SettingScreenStyles";
 import Header from "../components/header";
@@ -128,7 +129,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
 
   const logout = async () => {
     try {
-      const accessToken = await AsyncStorage.getItem("accessToken");
+      const accessToken = await SecureStore.getItemAsync("accessToken");
 
       const response = await fetch(
         "http://ser.iptime.org:8000/users/expire_token",
@@ -145,8 +146,8 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       console.log("로그아웃 응답:", response.status, responseText);
 
       // regardless of result, clear tokens
-      await AsyncStorage.removeItem("accessToken");
-      await AsyncStorage.removeItem("refreshToken");
+      await SecureStore.deleteItemAsync("accessToken");
+      await SecureStore.deleteItemAsync("refreshToken");
       setIsLoggedIn(false);
 
       if (!response.ok) {
