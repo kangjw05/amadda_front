@@ -119,19 +119,197 @@ const PersonalCalendar = () => {
     ],
   };
 
+  const userplan_test = [
+    {
+      // 1
+      category: "testcase-1",
+      date: "2025-07-10T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 2
+      category: "testcase-7",
+      date: "2025-07-10T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 3
+      category: "testcase-1",
+      date: "2025-07-10T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 4
+      category: "testcase-2",
+      date: "2025-07-15T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 5
+      category: "testcase-3",
+      date: "2025-07-19T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 5
+      category: "testcase-3",
+      date: "2025-07-19T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 5
+      category: "testcase-5",
+      date: "2025-07-21T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      // 5
+      category: "testcase-5",
+      date: "2025-07-21T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+  ];
+
+  const group1_test = [
+    {
+      category: "gcase-5",
+      date: "2025-07-06T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-5",
+      date: "2025-07-06T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-5",
+      date: "2025-07-10T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-5",
+      date: "2025-07-13T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-5",
+      date: "2025-07-15T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+  ];
+  const group2_test = [
+    {
+      category: "gcase-8",
+      date: "2025-07-12T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-8",
+      date: "2025-07-15T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-8",
+      date: "2025-07-15T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-8",
+      date: "2025-07-21T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-8",
+      date: "2025-07-24T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-8",
+      date: "2025-07-24T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+  ];
+  const group3_test = [
+    {
+      category: "gcase-6",
+      date: "2025-07-19T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-6",
+      date: "2025-07-19T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-6",
+      date: "2025-07-10T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+    {
+      category: "gcase-6",
+      date: "2025-07-30T21:25:20",
+      is_active: 1,
+      name: "테스트 플랜2",
+      uuid: "efac0746-a881-4f20-ad7a-d0fc827c5594",
+    },
+  ];
+
   const [todos, setTodos] = useState({});
 
   useEffect(() => {
-    const getUserPlan = async () => {
+    const loadAllPlan = async () => {
       try {
-        const response = await api.get("/plan/plans");
-        const rawDatas = response.data;
-
         const tempTodos = {};
 
-        rawDatas.forEach((todo) => {
-          const dateKey = todo.date.split("T")[0];
+        const userRes = await api.get("/plan/plans");
+        const userTodos = userRes.data;
 
+        userTodos.forEach((todo) => {
+          const dateKey = todo.date.split("T")[0];
           if (!tempTodos[dateKey]) {
             tempTodos[dateKey] = [];
           }
@@ -145,15 +323,31 @@ const PersonalCalendar = () => {
           });
         });
 
-        setTodos(tempTodos);
+        const groupTodos = [...group1_test, ...group2_test, ...group3_test];
 
+        groupTodos.forEach((todo) => {
+          const dateKey = todo.date.split("T")[0];
+          if (!tempTodos[dateKey]) {
+            tempTodos[dateKey] = [];
+          }
+
+          tempTodos[dateKey].push({
+            uuid: todo.uuid,
+            name: todo.name,
+            category: todo.category,
+            isActive: todo.is_active === 1,
+            isGroup: true,
+          });
+        });
+
+        setTodos(tempTodos);
         console.log("퍼스널", tempTodos); // 테스트
       } catch (error) {
         console.log("plan update 실패", error);
       }
     };
 
-    getUserPlan();
+    loadAllPlan();
   }, []);
 
   const test_post = async () => {
@@ -184,7 +378,7 @@ const PersonalCalendar = () => {
   return (
     <View style={styles.container}>
       <Header />
-      <Calendar todoData={todos_test} />
+      <Calendar todoData={todos} />
     </View>
   );
 };
