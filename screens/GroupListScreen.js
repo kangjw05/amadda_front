@@ -1,12 +1,10 @@
-import React, { useState, useEffect, createContext, Children } from "react";
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Modal, 
-  TextInput, 
-  Dimensions,
+import React, { useState, useEffect, useContext } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  TextInput,
   Image,
   TouchableWithoutFeedback,
   FlatList,
@@ -15,42 +13,31 @@ import {
 } from "react-native";
 import * as Clipboard from "expo-clipboard";
 import Swipeable from "react-native-gesture-handler/Swipeable";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-
+import api from "../api";
 
 import styles from "../styles/GroupListScreenStyles";
 import Header from "../components/header";
 import { groups } from "../Colors";
-
-function generateRandomCode(length = 6) {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  let result = "";
-  for (let i = 0; i < length; i++) {
-    const randomIndex = Math.floor(Math.random() * chars.length);
-    result += chars[randomIndex];
-  }
-  return result;
-}
+import { AuthContext } from "../context/AuthContext";
 
 const GroupListScreen = () => {
+  const { userInfo } = useContext(AuthContext);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [selectedTab, setSelectedTab] = useState("create"); // "create" or "join"
   const [groupName, setGroupName] = useState("");
-  const [groupCode, setGroupCode] = useState(generateRandomCode());
+  const [groupCode, setGroupCode] = useState("");
+  //const [groupCode, setGroupCode] = useState(generateRandomCode());
   const [groupPassword, setGroupPassword] = useState("");
-  const handleCopyCode = () => {
-    Clipboard.setStringAsync(groupCode);
-  }
   const [groupList, setGroupList] = useState([]);
   const [searchText, setSearchText] = useState("");
   const [isSearchVisible, setIsSearchVisible] = useState(false);
+
   useEffect(() => {
     loadGroups();
   }, []);
 
   const openModal = () => {
-    setGroupCode(generateRandomCode());
+    //setGroupCode(generateRandomCode());
     setIsModalVisible(true);
   };
 
@@ -59,6 +46,10 @@ const GroupListScreen = () => {
     setGroupName("");
     setGroupCode("");
     setGroupPassword("");
+  };
+
+  const handleCopyCode = () => {
+    Clipboard.setStringAsync(groupCode);
   };
 
   const handleCreateGroup = async () => {
@@ -71,35 +62,38 @@ const GroupListScreen = () => {
       return;
     }
 
+    console.log("보내는 데이터:", {
+      name: groupName,
+      password: groupPassword,
+      group_color: "group10"
+    });
+
     try {
-      const creator = await AsyncStorage.getItem("userName");
-      // 생성 API 호출
-      const response = await axios.post("http://ser.iptime.org:8000/group/create_group", {
+      const response = await api.post("/group/create_group", {
         name: groupName,
         password: groupPassword,
-        group_color: "group10"
+        group_color: "group10",
       });
+
       // 응답 예시: { code: "QWE789" }
       const newCode = response.data.code;
 
-      // 그룹 목록에 추가
       const newGroup = {
         name: groupName,
-        creator: creator,
+        creator: userInfo?.name,
         code: newCode,
         password: groupPassword,
         colorKey: "group10",
       };
       const updatedGroups = [...groupList, newGroup];
       setGroupList(updatedGroups);
-
       closeModal();
     } catch (error) {
       console.error("그룹 생성 실패:", error);
+      console.error("그룹 생성 실패:", error.response.data);
       Alert.alert("에러", "그룹 생성에 실패했습니다.");
     }
   };
-
 
   const handleJoinGroup = async () => {
     if (groupCode.trim() === "" || groupPassword.trim() === "") {
@@ -108,9 +102,9 @@ const GroupListScreen = () => {
     }
 
     try {
-      const response = await axios.post("http://ser.iptime.org:8000/group/register", {
+      const response = await api.post("/group/register", {
         code: groupCode,
-        password: groupPassword
+        password: groupPassword,
       });
 
       const { exists, passwordMatch } = response.data;
@@ -124,7 +118,6 @@ const GroupListScreen = () => {
         return;
       }
 
-      // 성공 시 그룹 정보 새로고침
       await loadGroups();
       closeModal();
     } catch (error) {
@@ -135,42 +128,29 @@ const GroupListScreen = () => {
 
   const loadGroups = async () => {
     try {
-      const token = await AsyncStorage.getItem("accessToken");
-
-      // 1) 내 그룹 코드 리스트
-      const infoResponse = await axios.get("http://ser.iptime.org:8000/users/info", {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-
+      const infoResponse = await api.get("/users/info");
       const myGroupCodes = infoResponse.data.groups || [];
 
-      // 2) 그룹 코드로 상세 정보 요청
-      const detailedGroups = [];
-      for (const g of myGroupCodes) {
-        const detailResponse = await axios.get(
-          `http://ser.iptime.org:8000/group/search_group`,
-          {
-            params: { code: g.code }
-          }
-        );
+      const detailedGroups = await Promise.all(
+        myGroupCodes.map(async (g) => {
+          const detailResponse = await api.get("/group/search_group", {
+            params: { code: g.code },
+          });
+          const groupData = detailResponse.data;
 
-        const groupData = detailResponse.data;
+          return {
+            name: groupData.name,
+            creator: groupData.creator,
+            code: groupData.code,
+            colorKey: groupData.group_color
+          };
+        })
+      );
 
-        // FlatList에 맞게 가공
-        detailedGroups.push({
-          name: groupData.name,
-          creator: groupData.creator,
-          code: groupData.code,
-          colorKey: groupData.group_color
-        });
-      }
-
-      // 3) state에 저장
+      // 3) 최종 리스트 저장
       setGroupList(detailedGroups);
-
     } catch (error) {
+      console.log("✅ infoResponse.data:", infoResponse.data);
       console.error("그룹 리스트 불러오기 실패:", error);
       Alert.alert("에러", "그룹 리스트를 불러오지 못했습니다.");
     }
@@ -188,9 +168,9 @@ const GroupListScreen = () => {
   };
 
   const handleLeaveGroup = async (group) => {
-    const currentUserId = await AsyncStorage.getItem("accessToken"); // TODO: 실제 로그인 사용자 정보로 교체
+    const currentUser = userInfo?.username;
 
-    if (group.creator === currentUserId) {
+    if (group.creator === currentUser) {
       // 그룹 생성자인 경우 그룹 삭제 로직
       Alert.alert(
         "그룹 삭제",
@@ -201,33 +181,23 @@ const GroupListScreen = () => {
             text: "확인",
             style: "destructive",
             onPress: () => {
-              // 이름 입력용 팝업
               Alert.prompt(
                 "그룹 이름 확인",
                 `그룹 이름을 정확히 입력하면 삭제됩니다.`,
                 [
-                  {
-                    text: "취소",
-                    style: "cancel",
-                  },
+                  { text: "취소", style: "cancel" },
                   {
                     text: "삭제",
                     style: "destructive",
                     onPress: async (inputText) => {
                       if (inputText.trim() !== group.name) {
-                        Alert.alert(
-                          "오류",
-                          "입력한 이름이 그룹 이름과 일치하지 않습니다."
-                        );
+                        Alert.alert("오류", "입력한 이름이 그룹 이름과 일치하지 않습니다.");
                         return;
                       }
                       try {
-                        const response = await axios.post(
-                          "http://ser.iptime.org:8000/group/del_group",
-                          {
-                            code: group.code,
-                          }
-                        );
+                        const response = await api.post("/group/del_group", {
+                          code: group.code,
+                        });
                         if (response.data.success) {
                           await loadGroups();
                           Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
@@ -235,7 +205,7 @@ const GroupListScreen = () => {
                           Alert.alert("에러", "그룹 삭제에 실패했습니다.");
                         }
                       } catch (error) {
-                        console.error("그룹 삭제 실패:", error);
+                        console.error("그룹 삭제 실패:", error.response.data);
                         Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
                       }
                     },
@@ -248,7 +218,7 @@ const GroupListScreen = () => {
         ]
       );
     } else {
-      // 일반 참여자인 경우 나가기 로직
+      // 참여자인 경우 나가기
       Alert.alert(
         "그룹 나가기",
         `"${group.name}" 그룹을 나가시겠습니까?`,
@@ -259,18 +229,9 @@ const GroupListScreen = () => {
             style: "destructive",
             onPress: async () => {
               try {
-                const token = await AsyncStorage.getItem("accessToken");
-                const response = await axios.post(
-                  "http://ser.iptime.org:8000/group/out_group",
-                  {
-                    code: group.code
-                  },
-                  {
-                    headers: {
-                      Authorization: `Bearer ${token}`
-                    }
-                  }
-                );
+                const response = await api.post("/group/out_group", {
+                  code: group.code,
+                });
                 if (response.data.success) {
                   await loadGroups();
                   Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
@@ -295,41 +256,37 @@ const GroupListScreen = () => {
       {/* 리스트 헤더 */}
       <View style={styles.topBar}>
         <Text style={styles.headText}>그룹</Text>
-        <View style={{
-          flexDirection: "row", 
-          alignItems: "center",
-          justifyContent: "flex-end",
-         }}>
-        {isSearchVisible && (
-          <View style={{ width: "60%" }}>
-          <TextInput
-            placeholder="검색"
-            value={searchText}
-            onChangeText={setSearchText}
-            style={styles.searchInput}
-            maxLength={16}
-          />
+        <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "flex-end" }}>
+          {isSearchVisible && (
+            <View style={{ width: "60%" }}>
+              <TextInput
+                placeholder="검색"
+                value={searchText}
+                onChangeText={setSearchText}
+                style={styles.searchInput}
+                maxLength={16}
+              />
+            </View>
+          )}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <TouchableOpacity
+              onPress={() => setIsSearchVisible(!isSearchVisible)}
+              style={styles.addButton}
+            >
+              <Image
+                source={require("../assets/images/searchIcon.png")}
+                style={styles.searchIcon}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={openModal} style={styles.addButton}>
+              <Text style={styles.addButtonText}>＋</Text>
+            </TouchableOpacity>
           </View>
-        )}
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-        <TouchableOpacity
-        onPress={() => setIsSearchVisible(!isSearchVisible)}
-        style={styles.addButton}
-        >
-          <Image
-            source={require("../assets/images/searchIcon.png")}
-            style={styles.searchIcon}
-          />
-          </TouchableOpacity>
-        <TouchableOpacity onPress={openModal} style={styles.addButton}>
-          <Text style={styles.addButtonText}>＋</Text>
-        </TouchableOpacity>
-        </View>
         </View>
       </View>
 
       {/* 모달 */}
-      <Modal
+     <Modal
         visible={isModalVisible}
         animationType="slide"
         transparent={true}
@@ -364,7 +321,6 @@ const GroupListScreen = () => {
                 ]}>그룹 참가</Text>
               </TouchableOpacity>
             </View>
-
             {/* 내용 */}
             {selectedTab === "create" ? (
               <View>
@@ -398,7 +354,7 @@ const GroupListScreen = () => {
                 />
                 </ImageBackground>
                 </View>
-                <View style={styles.inputContainer}>
+                {/*<View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>그룹 코드</Text>
                 <ImageBackground
                   source={require("../assets/images/inputBox.png")}
@@ -415,6 +371,7 @@ const GroupListScreen = () => {
                 </TouchableOpacity>
                 </ImageBackground>
                 </View>
+                */}
                 <View style={styles.buttonContainer}>
                 <TouchableOpacity
                   style={styles.actionButton}
@@ -471,35 +428,44 @@ const GroupListScreen = () => {
         </TouchableWithoutFeedback>
       </Modal>
       <FlatList
-        data={groupList.filter(item =>
-          item.name.toLowerCase().includes(searchText.toLowerCase()) ||
-          item.creator.toLowerCase().includes(searchText.toLowerCase())
+        data={groupList.filter(
+          (item) =>
+            item.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            item.creator.toLowerCase().includes(searchText.toLowerCase())
         )}
-        keyExtractor={(item) => item.code}
+        keyExtractor={(item, index) => item.code || index.toString()}
         renderItem={({ item }) => {
-          const colorTheme = groups[item.colorKey];
+          const colorTheme = groups[item.colorKey] || groups["group1"];
           return (
             <Swipeable renderRightActions={() => renderRightActions(item)}>
             <TouchableOpacity style={styles.groupItem}>
-              <View style={[styles.groupIconContainer, { backgroundColor: colorTheme.checkbox }]}>
+              <View 
+                style={[styles.groupIconContainer, 
+                { backgroundColor: colorTheme.checkbox }]}>
                 <Image
                   source={require("../assets/images/groupIcon.png")} 
                   style={styles.groupIcon}
                   resizeMode="contain"
-                >
-                </Image>
-              </View>
-              <View style={styles.groupInfo}>
-                <Text style={[styles.groupName, { color: colorTheme.text }]}>{item.name}</Text>
-                <Text style={[styles.groupCreator, { color: colorTheme.text }]}>{item.creator}</Text>
-              </View>
-              <View style={styles.groupCodeContainer}>
-              </View>
-            </TouchableOpacity>
+                />
+                  <Image
+                    source={require("../assets/images/groupIcon.png")}
+                    style={styles.groupIcon}
+                    resizeMode="contain"
+                  />
+                </View>
+                <View style={styles.groupInfo}>
+                  <Text style={[styles.groupName, { color: colorTheme.text }]}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.groupCreator, { color: colorTheme.text }]}>
+                    {item.creator}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </Swipeable>
           );
         }}
-        />
+      />
     </View>
   );
 };
