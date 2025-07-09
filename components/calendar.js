@@ -296,7 +296,7 @@ const Calendar = ({ todoData }) => {
               </Text>
             </View>
             <View>
-              <CheckBox />
+              <CheckBox color={getCategoryColor(item.category).checkbox} />
             </View>
           </View>
         ))}

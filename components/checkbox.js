@@ -1,12 +1,20 @@
 import React, { useState } from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 
-const CustomCheckbox = () => {
+import { themeColors, categories, groups } from "../Colors";
+
+const CustomCheckbox = ({ color = "#7EB4BC", onToggle = () => {} }) => {
   const [checked, setChecked] = useState(false);
 
+  const handlePress = () => {
+    const newValue = !checked;
+    setChecked(newValue);
+    onToggle(newValue);
+  };
+
   return (
-    <TouchableOpacity onPress={() => setChecked(!checked)}>
-      <View style={[styles.checkbox, checked && styles.checked]}>
+    <TouchableOpacity onPress={handlePress}>
+      <View style={[styles.checkbox, { backgroundColor: color }]}>
         {checked && <Text style={styles.checkmark}>✓</Text>}
       </View>
     </TouchableOpacity>
@@ -18,12 +26,9 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 6,
-    backgroundColor: "#E2EEF7", // 체크 안 됐을 때 배경
+    backgroundColor: "orange",
     justifyContent: "center",
     alignItems: "center",
-  },
-  checked: {
-    backgroundColor: "#86C5D8", // 체크 됐을 때 배경
   },
   checkmark: {
     color: "white",
