@@ -11,13 +11,13 @@ export const themeColors = {
 };
 
 export const categories = {
-  category1: { bg: "#C3DFF0", text: "#6488BB", checkbox: "#7EB4BC" },
+  category1: { bg: "#C3DFF0", text: "#3C548C", checkbox: "#7EB4BC" },
   category2: { bg: "#DDA59F", text: "#89372E", checkbox: "#914B4C" },
   category3: { bg: "#97B08A", text: "#465F3A", checkbox: "#4D7745" },
   category4: { bg: "#65B9B8", text: "#2F5454", checkbox: "#2F7372" },
-  category5: { bg: "#CEC4D7", text: "#42325F", checkbox: "#5E2F73" },
+  category5: { bg: "#CEC4D7", text: "#42325F", checkbox: "#695573" },
   category6: { bg: "#F5F4C3", text: "#5D5F32", checkbox: "#8C972D" },
-  category7: { bg: "#D5BFCF", text: "#5F3255", checkbox: "#972D70" },
+  category7: { bg: "#D5BFCF", text: "#5F3255", checkbox: "#B26889" },
   category8: { bg: "#E4E4E4", text: "#464646", checkbox: "#353535" },
 };
 
