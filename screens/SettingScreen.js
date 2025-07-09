@@ -22,9 +22,9 @@ import Header from "../components/header";
 import LoginScreen from "./LoginScreen";
 import { AuthContext } from "../context/AuthContext";
 
-const SettingScreen = ({ setIsLoggedIn }) => {
+const SettingScreen = () => {
   const navigation = useNavigation();
-  const { userInfo, setUserInfo } = useContext(AuthContext);
+  const { userInfo, setUserInfo, setIsLoggedIn } = useContext(AuthContext);
 
   const [account, setAccount] = useState("");
 
