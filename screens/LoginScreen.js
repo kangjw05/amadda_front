@@ -33,10 +33,10 @@ const LoginScreen = ({ onLogin }) => {
       const result = await response.json();
       console.log("로그인 응답 result:", result);
 
-      if (response.ok && result.access_token && result.refresh_token) {
+      if (response.ok && result.access_token) {
         // 토큰 저장
-        await SecureStore.setItemAsync("accessToken", result.access_token);
-        await SecureStore.setItemAsync("refreshToken", result.refresh_token);
+        await SecureStore.setItemAsync("accessToken", String(result.access_token));
+        await SecureStore.setItemAsync("refreshToken", String(result.refresh_token));
 
         // 사용자 정보 가져오기 (api.js에 자동 토큰 넣음 & 재발급)
         const protectedRes = await api.get("/users/info");
@@ -47,6 +47,7 @@ const LoginScreen = ({ onLogin }) => {
         onLogin(); // 로그인 성공 후 이동
       } else {
         console.log("로그인 실패: 응답 비정상 또는 토큰 없음");
+        console.log("로그인 응답 result:", result);
         alert("로그인 실패: " + JSON.stringify(result));
       }
     } catch (err) {
