@@ -18,7 +18,7 @@ const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const Calendar = ({ todoData }) => {
+const Calendar = ({ todoData = {} }) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -144,7 +144,7 @@ const Calendar = ({ todoData }) => {
         </View>
       );
     },
-    [selectedDate]
+    [selectedDate, todoData]
   );
 
   // FlatList 레퍼런스
@@ -190,13 +190,24 @@ const Calendar = ({ todoData }) => {
     }, 300);
   };
 
-  const getCategoryColor = (categoryStr) => {
-    const categoryNum = categoryStr.split("-")[1];
-    const key = `category${categoryNum}`;
-
-    return (
-      categories[key] || { bg: "#C3DFF0", text: "#6488BB", checkbox: "#7EB4BC" }
-    );
+  const getTodoColor = (item) => {
+    const categoryNum = item.category.split("-")[1];
+    let key = "category1";
+    if (item.isGroup) {
+      key = `group${categoryNum}`;
+      return (
+        groups[key] || { bg: "#638A7E", text: "#DBF0E4", checkbox: "#324B25" }
+      );
+    } else {
+      key = `category${categoryNum}`;
+      return (
+        categories[key] || {
+          bg: "#C3DFF0",
+          text: "#6488BB",
+          checkbox: "#7EB4BC",
+        }
+      );
+    }
   };
 
   return (
@@ -268,17 +279,11 @@ const Calendar = ({ todoData }) => {
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
           <View
             key={index}
-            style={[
-              styles.todos,
-              { backgroundColor: getCategoryColor(item.category).bg },
-            ]}
+            style={[styles.todos, { backgroundColor: getTodoColor(item).bg }]}
           >
             <View style={{ width: "85%" }}>
               <Text
-                style={[
-                  styles.todoCatText,
-                  { color: getCategoryColor(item.category).text },
-                ]}
+                style={[styles.todoCatText, { color: getTodoColor(item).text }]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
               >
@@ -287,7 +292,7 @@ const Calendar = ({ todoData }) => {
               <Text
                 style={[
                   styles.todoNameText,
-                  { color: getCategoryColor(item.category).text },
+                  { color: getTodoColor(item).text },
                 ]}
                 numberOfLines={1}
                 ellipsizeMode="tail"
@@ -296,7 +301,7 @@ const Calendar = ({ todoData }) => {
               </Text>
             </View>
             <View>
-              <CheckBox color={getCategoryColor(item.category).checkbox} />
+              <CheckBox color={getTodoColor(item).checkbox} />
             </View>
           </View>
         ))}
