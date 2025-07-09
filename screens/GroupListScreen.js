@@ -2,11 +2,9 @@ import React, { useState, useEffect, createContext, Children, useContext } from 
 import { 
   View, 
   Text, 
-  StyleSheet, 
   TouchableOpacity, 
   Modal, 
   TextInput, 
-  Dimensions,
   Image,
   TouchableWithoutFeedback,
   FlatList,
@@ -17,6 +15,7 @@ import * as Clipboard from "expo-clipboard";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import * as SecureStore from "expo-secure-store";
 
 
 import styles from "../styles/GroupListScreenStyles";
@@ -67,14 +66,16 @@ const GroupListScreen = () => {
     console.log("보내는 데이터:", {
       name: groupName,
       password: groupPassword,
-      group_color: "group1"
+      group_color: "group10"
     });
-
-    try {
-      const creator = userInfo?.name || "알수없음";
-      // 생성 API 호출
+    try{
+      const token = await SecureStore.getItemAsync("accessToken");
+      if (!token) {
+        Alert.alert("에러", "로그인 정보가 없습니다.");
+        return;
+      }
       const response = await axios.post(
-        "http://ser.iptime.org:8000/group/create_group", 
+        "http://ser.iptime.org:8000/group/create_group",
         {
           name: groupName,
           password: groupPassword,
@@ -82,10 +83,12 @@ const GroupListScreen = () => {
         },
         {
           headers: {
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
           }
         }
       );
+
       // 응답 예시: { code: "QWE789" }
       const newCode = response.data.code;
 
@@ -115,10 +118,24 @@ const GroupListScreen = () => {
     }
 
     try {
-      const response = await axios.post("http://ser.iptime.org:8000/group/register", {
+      const token = await SecureStore.getItemAsync("accessToken");
+      if (!token) {
+        Alert.alert("로그인 필요", "로그인 정보가 없습니다.");
+        return;
+      }
+      const response = await axios.post(
+        "http://ser.iptime.org:8000/group/register", 
+        {
         code: groupCode,
         password: groupPassword
-      });
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
 
       const { exists, passwordMatch } = response.data;
 
@@ -142,7 +159,11 @@ const GroupListScreen = () => {
 
   const loadGroups = async () => {
     try {
-      const basicGroups = userInfo?.groups;
+      const basicGroups = userInfo?.groups || [];
+      if (basicGroups.length === 0) {
+        setGroupList([]);
+        return;
+      }
 
       //각 그룹의 상세정보 요청 (병렬)
       const detailedGroups = await Promise.all(
@@ -220,10 +241,17 @@ const GroupListScreen = () => {
                         return;
                       }
                       try {
+                        const token = SecureStore.getItemAsync("accessToken");
                         const response = await axios.post(
                           "http://ser.iptime.org:8000/group/del_group",
                           {
                             code: group.code,
+                          },
+                          {
+                            headers: {
+                              "Content-Type": "application/json",
+                              Authorization: `Bearer ${token}`
+                            }
                           }
                         );
                         if (response.data.success) {
@@ -233,7 +261,7 @@ const GroupListScreen = () => {
                           Alert.alert("에러", "그룹 삭제에 실패했습니다.");
                         }
                       } catch (error) {
-                        console.error("그룹 삭제 실패:", error);
+                        console.error("그룹 삭제 실패:", error.response.data);
                         Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
                       }
                     },
@@ -257,7 +285,7 @@ const GroupListScreen = () => {
             style: "destructive",
             onPress: async () => {
               try {
-                const token = await AsyncStorage.getItem("accessToken");
+                const token = await SecureStore.getItemAsync("accessToken");
                 const response = await axios.post(
                   "http://ser.iptime.org:8000/group/out_group",
                   {
@@ -265,6 +293,7 @@ const GroupListScreen = () => {
                   },
                   {
                     headers: {
+                      "Content-Type": "application/json",
                       Authorization: `Bearer ${token}`
                     }
                   }
@@ -474,7 +503,7 @@ const GroupListScreen = () => {
           item.name.toLowerCase().includes(searchText.toLowerCase()) ||
           item.creator.toLowerCase().includes(searchText.toLowerCase())
         )}
-        keyExtractor={(item) => item.code}
+        keyExtractor={(item, index) => item.code || index.toString()}
         renderItem={({ item }) => {
           const colorTheme = groups[item.colorKey] || groups["group1"];
           return (
