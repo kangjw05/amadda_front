@@ -366,15 +366,6 @@ const PersonalCalendar = () => {
 
   test_post();
 
-  // const get_user_group_plan = async () => {
-  //   try {
-  //     const response = await api.get("/plan/plans");
-  //     console.log(response.data);
-  //   } catch (error) {
-  //     console.log("plan get 실패", error);
-  //   }
-  // };
-
   return (
     <View style={styles.container}>
       <Header />
