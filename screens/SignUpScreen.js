@@ -58,6 +58,7 @@ const SignUpScreen = () => {
       if (timerId) clearTimeout(timerId);
     };
   }, []);
+  
   return (
     <View style={styles.mainContainer}>
       {/* 로고 */}
