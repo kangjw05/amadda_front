@@ -149,6 +149,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={code}
               onChangeText={setCode}
+              editable={!codeVerified}
             />
           </ImageBackground>
           {codeVerified ? (
