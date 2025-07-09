@@ -10,6 +10,13 @@ const FindPwScreenStyles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
+  changePWmainContainer: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: themeColors.bg,
+    alignItems: "center",
+    justifyContent: "center",
+  },
   logoContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -20,6 +27,12 @@ const FindPwScreenStyles = StyleSheet.create({
     width: 104,
     height: 99,
     resizeMode: "contain",
+  },
+  lockLogoImage: {
+    width: 40,
+    height: 40,
+    resizeMode: "contain",
+    marginRight: 10,
   },
   logoText: {
     fontSize: 30,

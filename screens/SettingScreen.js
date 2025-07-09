@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext} from "react";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -15,38 +15,20 @@ import {
 } from "react-native";
 import { themeColors, categories, groups } from "../Colors";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as SecureStore from "expo-secure-store";
 
 import styles from "../styles/SettingScreenStyles";
 import Header from "../components/header";
 import LoginScreen from "./LoginScreen";
+import { AuthContext } from "../context/AuthContext";
 
 const SettingScreen = ({ setIsLoggedIn }) => {
   const navigation = useNavigation();
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const accountJson = await AsyncStorage.getItem("accountData");
-        if (accountJson) {
-          setAccountData(JSON.parse(accountJson));
-        }
-        const categoriesJson = await AsyncStorage.getItem("categoriesList");
-        if (categoriesJson) {
-          setCategoriesList(JSON.parse(categoriesJson));
-        }
-      } catch (error) {
-        console.error("데이터 로드 실패:", error);
-      }
-    };
-    loadData();
-  }, []);
+  const {userInfo} = useContext(AuthContext);
 
   const [account, setAccount] = useState("");
-  const [password, setPassword] = useState("1234");
 
   const [isEditingAccount, setIsEditingAccount] = useState(false);
-  const [isEditingPassword, setisEditingPassword] = useState(false);
-  const [tempPassword, setTempPassword] = useState("");
-  const [checkPassword, setCheckPassword] = useState("");
 
   const [isCategoryModalVisible, setIsCategoryModalVisible] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
@@ -58,14 +40,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [editingColorKey, setEditingColorKey] = useState("category1");
 
-  const saveAccountData = async (data) => {
-    try {
-      await AsyncStorage.setItem("accountData", JSON.stringify(data));
-    } catch (error) {
-      console.error("accountData 저장 실패:", error);
-    }
-  };
-
   const saveCategoriesList = async (data) => {
     try {
       await AsyncStorage.setItem("categoriesList", JSON.stringify(data));
@@ -74,62 +48,13 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     }
   };
 
-  const openPasswordModal = () => {
-    setPassword("");
-    setTempPassword("");
-    setCheckPassword("");
-    setisEditingPassword(true);
-  };
-
-  const savePassword = async () => {
-    if (tempPassword !== checkPassword) {
-      Alert.alert("새 비밀번호 불일치", "새 비밀번호가 일치하지 않습니다.");
-      return;
-    }
-    if (tempPassword === "" || checkPassword === "") {
-      Alert.alert("비밀번호 입력 오류", "비밀번호를 입력해주세요.");
-      return;
-    }
-    if (tempPassword === accountData.password) {
-      Alert.alert(
-        "비밀번호 변경 오류",
-        "새 비밀번호가 현재 비밀번호와 동일합니다."
-      );
-
-      return;
-    }
-    if (password !== accountData.password) {
-      Alert.alert("비밀번호 오류", "현재 비밀번호가 일치하지 않습니다.");
-      return;
-    }
-      */}
-    {/*const newAccountData = {
-      ...accountData,
-      password: tempPassword,
-    };*/}
-    setisEditingPassword(false);
-  };
-
   const saveAccount = async () => {
     if (account === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
       return;
     }
-    const newAccountData = {
-      ...accountData,
-      account: account,
-    };
-    setAccountData(newAccountData);
-    await saveAccountData(newAccountData);
     setIsEditingAccount(false);
   };
-
-  const [accountData, setAccountData] = useState({
-    account: "마정우",
-    email: "majw.naver.com",
-  });
-
-  const tempAccount = accountData.account;
 
   const [categoriesList, setCategoriesList] = useState([
     { id: 1, name: "기타", colorKey: "category1" },
@@ -204,7 +129,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
 
   const logout = async () => {
     try {
-      const accessToken = await AsyncStorage.getItem("accessToken");
+      const accessToken = await SecureStore.getItemAsync("accessToken");
 
       const response = await fetch(
         "http://ser.iptime.org:8000/users/expire_token",
@@ -218,18 +143,18 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       );
 
       const responseText = await response.text();
-      console.log("🔁 로그아웃 응답:", response.status, responseText);
+      console.log("로그아웃 응답:", response.status, responseText);
 
       // regardless of result, clear tokens
-      await AsyncStorage.removeItem("accessToken");
-      await AsyncStorage.removeItem("refreshToken");
+      await SecureStore.deleteItemAsync("accessToken");
+      await SecureStore.deleteItemAsync("refreshToken");
       setIsLoggedIn(false);
 
       if (!response.ok) {
         Alert.alert("로그아웃 실패", responseText || "다시 시도해주세요.");
       }
     } catch (error) {
-      console.error("🚨 로그아웃 네트워크 오류:", error);
+      console.error("로그아웃 네트워크 오류:", error);
       Alert.alert("오류", "서버에 연결할 수 없습니다.");
     }
   };
@@ -251,14 +176,13 @@ const SettingScreen = ({ setIsLoggedIn }) => {
             style={styles.icon}
           />
         </View>
-
         <View style={styles.rightpannel}>
           <View style={styles.inputRow}>
             <Text style={styles.label}>계정</Text>
             <View style={styles.inputContainer}>
             {isEditingAccount ? (
                 <TextInput
-                  placeholder={tempAccount}
+                  placeholder={userInfo?.name}
                   value={account}
                   onChangeText={setAccount}
                   onBlur={saveAccount}
@@ -267,7 +191,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                   maxLength={16}
                 />
               ) : (
-                <Text style={styles.input}>{accountData.account}</Text>
+                <Text style={styles.input}>{userInfo?.name}</Text>
               )}
             <TouchableOpacity onPress={() => setIsEditingAccount(!isEditingAccount)}>
               <Image
@@ -276,43 +200,12 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               />
             </TouchableOpacity>
             </View>
-          </View>
-
-          <View style={styles.rightpannel}>
-            <View style={styles.inputRow}>
-              <Text style={styles.label}>계정</Text>
-              <View style={styles.inputContainer}>
-                {isEditingAccount ? (
-                  <TextInput
-                    placeholder={tempAccount}
-                    value={account}
-                    onChangeText={setAccount}
-                    onBlur={saveAccount}
-                    autoFocus
-                    style={styles.input}
-                    maxLength={16}
-                  />
-                ) : (
-                  <Text style={styles.input}>{accountData.account}</Text>
-                )}
-                <TouchableOpacity
-                  onPress={() => setIsEditingAccount(!isEditingAccount)}
-                >
-                  <Image
-                    source={require("../assets/images/pencilIcon.png")}
-                    style={styles.icon}
-                  />
-                </TouchableOpacity>
-              </View>
-            </View>
-
             <View style={styles.inputRow}>
               <Text style={styles.label}>이메일</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.input}>{accountData.email}</Text>
+                <Text style={styles.input}>{userInfo?.email}</Text>
               </View>
             </View>
-
           </View>
         </View>
       </View>
@@ -349,9 +242,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     }}
                     style={styles.categoryItem}
                   >
-                    <Text
-                      style={styles.categoryText}
-                    >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
                         style={[
@@ -501,7 +391,9 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               </View>
             </TouchableWithoutFeedback>
           </Modal>
-          <TouchableOpacity style={styles.information}>
+          <TouchableOpacity 
+          style={styles.information}
+          onPress={() => navigation.navigate("ChangePw")}>
             <View style={styles.leftpannel}>
               <Image
                 source={require("../assets/images/lockIcon.png")}
@@ -514,18 +406,18 @@ const SettingScreen = ({ setIsLoggedIn }) => {
             </View>
             </View>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.information}>
-            <View style={styles.leftpannel}>
-              <Image
-                source={require("../assets/images/logoutIcon.png")}
-                style={styles.outIcon}
-              />
-            </View>
-            <View style={styles.rightpannel}>
-              <View style={styles.inputRow}>
-                <Text style={styles.outText}>로그아웃</Text>
-            </View>
+        <TouchableOpacity style={styles.information} onPress={logout}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/logoutIcon.png")}
+              style={styles.outIcon}
+            />
           </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <Text style={styles.outText}>로그아웃</Text>
+              </View>
+            </View>
         </TouchableOpacity>
         <TouchableOpacity style={styles.information}>
           <View style={styles.leftpannel}>
@@ -534,7 +426,6 @@ const SettingScreen = ({ setIsLoggedIn }) => {
               style={styles.outIcon}
             />
           </View>
-
           <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
               <Text style={styles.outText}>앱 탈퇴</Text>
