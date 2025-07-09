@@ -17,7 +17,8 @@ const LoginScreen = ({ onLogin }) => {
   const navigation = useNavigation();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
-  const { setUserInfo } = useContext(AuthContext);
+  const { setUserInfo, setIsLoggedIn } = useContext(AuthContext);
+
 
   const login = async () => {
     const formBody = `username=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`;
@@ -44,7 +45,7 @@ const LoginScreen = ({ onLogin }) => {
 
         console.log("보호된 유저 데이터:", protectedData);
         setUserInfo(protectedData); // 전역 상태 저장
-        onLogin(); // 로그인 성공 후 이동
+        setIsLoggedIn(true);
       } else {
         console.log("로그인 실패: 응답 비정상 또는 토큰 없음");
         console.log("로그인 응답 result:", result);
