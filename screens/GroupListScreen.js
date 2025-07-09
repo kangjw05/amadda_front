@@ -227,7 +227,7 @@ const GroupListScreen = () => {
         },
       });
 
-      const auth = authResponse.data.auth;
+      const auth = authResponse.data;
       console.log("권한 상태:", auth);
       if (auth === 0) {
         // 그룹 생성자인 경우 그룹 삭제 로직
@@ -257,7 +257,7 @@ const GroupListScreen = () => {
                           const response = await api.post("/group/del_group", {
                             code: group.code,
                           });
-                          if (response.data.success) {
+                          if (response.status === 200) {
                             await loadGroups();
                             Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
                           } else {
@@ -277,54 +277,38 @@ const GroupListScreen = () => {
           ]
         );
       } else {
-        // 참여자인 경우 나가기
-        Alert.alert(
-          "그룹 나가기",
-          `"${group.name}" 그룹을 나가시겠습니까?`,
-          [
-            { text: "취소", style: "cancel" },
-            {
-              text: "나가기",
-              style: "destructive",
-              onPress: async () => {
-                try {
-                  const response = await api.post("/group/out_group", {
-                    code: group.code,
-                  });
-                  if (response.data.success) {
-                    await loadGroups();
-                    Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
-                  } else {
-                    Alert.alert("에러", "그룹 나가기 실패");
+            // detail에 따라 판단 가능 (원하면 조건 추가 가능)
+          Alert.alert(
+            "그룹 나가기",
+            `"${group.name}" 그룹을 나가시겠습니까?`,
+            [
+              { text: "취소", style: "cancel" },
+              {
+                text: "나가기",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    const response = await api.post("/group/out_group", {
+                      code: group.code,
+                    });
+                    if (response.status === 200) {
+                      await loadGroups();
+                      Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
+                    } else {
+                      Alert.alert("에러", "그룹 나가기 실패");
+                    }
+                  } catch (error) {
+                    console.error("그룹 나가기 실패:", error.response.data);
+                    Alert.alert("에러", "그룹 나가기에 실패했습니다.");
                   }
-                } catch (error) {
-                  console.error("그룹 나가기 실패:", error);
-                  Alert.alert("에러", "그룹 나가기에 실패했습니다.");
-                }
+                },
               },
-            },
-          ]
-        );
-      };
+            ]
+          );
+      }
     } catch(error) {
     // 여기로 들어오면 권한이 없다는 뜻임
-    console.log("권한 확인 실패:", error.response?.data || error.message);
-
-    // detail에 따라 판단 가능 (원하면 조건 추가 가능)
-    Alert.alert(
-      "그룹 나가기",
-      `"${group.name}" 그룹을 나가시겠습니까?`,
-      [
-        { text: "취소", style: "cancel" },
-        {
-          text: "나가기",
-          style: "destructive",
-          onPress: () => {
-            // 나가기 로직 호출
-          },
-        },
-      ]
-    );
+    console.error("권한 확인 실패:", error.response?.data || error.message);
   }
   };
 
