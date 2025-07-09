@@ -48,9 +48,11 @@ export default function RootNavigator() {
               title: "비밀번호 변경",
             }}
           />
-          <Stack.Screen name="Deluser" options={{ title: "회원 탈퇴" }}>
-            {() => <DeluserScreen setIsLoggedIn={setIsLoggedIn} />}
-          </Stack.Screen>
+          <Stack.Screen
+            name="Deluser"
+            options={{ title: "회원 탈퇴" }}
+            component={DeluserScreen}
+          />
         </>
       )}
     </Stack.Navigator>

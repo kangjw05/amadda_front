@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
   Image,
@@ -15,9 +15,11 @@ import { API_BASE_URL } from "@env";
 import * as SecureStore from "expo-secure-store";
 
 import styles from "../styles/DeluserScreenStyles";
+import { AuthContext } from "../context/AuthContext";
 
-const DeluserScreen = ({ setIsLoggedIn }) => {
+const DeluserScreen = () => {
   const navigation = useNavigation();
+  const { setUserInfo, setIsLoggedIn } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
