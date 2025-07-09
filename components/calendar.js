@@ -7,32 +7,18 @@ import {
   View,
   Dimensions,
   StyleSheet,
+  RefreshControl,
 } from "react-native";
 
 import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
+import CheckBox from "./checkbox";
 
 const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const mockupTodos = [
-  "테스트1",
-  "테스트2",
-  "테스트3",
-  "테스트4",
-  "테스트5",
-  "테스트6",
-  "테스트7",
-  "테스트8",
-  "테스트9",
-  "테스트10",
-  "테스트11",
-  "테스트12",
-  "테스트13",
-];
-
-const Calendar = () => {
+const Calendar = ({ todoData }) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -52,6 +38,14 @@ const Calendar = () => {
       data.push(...generateOneYearData(y));
     }
     return data;
+  };
+
+  const getSelectedDateFormat = () => {
+    const year = selectedDate.getFullYear();
+    const monthStr = String(selectedDate.getMonth() + 1).padStart(2, "0");
+    const dateStr = String(selectedDate.getDate()).padStart(2, "0");
+
+    return `${year}-${monthStr}-${dateStr}`;
   };
 
   // 스크롤 엔드 이벤트
@@ -80,7 +74,6 @@ const Calendar = () => {
     // 그래서 그냥 냅다 5년치 한번에 로딩해버리기로 해스요
     if (index < 1) {
       const firstItem = calendarDataRef.current[0];
-      console.log(firstItem);
       const moreData = [];
       for (let y = firstItem.year - 5; y < firstItem.year; y++) {
         moreData.push(...generateOneYearData(y));
@@ -146,6 +139,7 @@ const Calendar = () => {
             month={item.month}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
+            todos={todoData}
           />
         </View>
       );
@@ -175,8 +169,44 @@ const Calendar = () => {
   // 페이징 이동용 현재 인덱스 정보
   const [currentIndex, setCurrentIndex] = useState(24 + today.getMonth());
 
+  // 캘린더 컴포넌트 초기 상태로 새로고침 이벤트
+  const [refreshing, setRefreshing] = useState(false);
+  // 새로고침 함수
+  const onRefresh = () => {
+    setRefreshing(true);
+    const today = new Date();
+
+    const newData = generateCalendarData(today.getFullYear());
+    setCalendarData(newData);
+    setSelectedDate(today);
+    setCurrentIndex(24 + today.getMonth());
+
+    setTimeout(() => {
+      flatListRef.current?.scrollToIndex({
+        index: 24 + today.getMonth(),
+        animated: false,
+      });
+      setRefreshing(false);
+    }, 300);
+  };
+
+  const getCategoryColor = (categoryStr) => {
+    const categoryNum = categoryStr.split("-")[1];
+    const key = `category${categoryNum}`;
+
+    return (
+      categories[key] || { bg: "#C3DFF0", text: "#6488BB", checkbox: "#7EB4BC" }
+    );
+  };
+
   return (
-    <ScrollView style={styles.bg} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.bg}
+      showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
+    >
       <View style={styles.header}>
         <View style={styles.headerDate}>
           <Text style={styles.headerText}>
@@ -235,10 +265,39 @@ const Calendar = () => {
             <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
-
-        {mockupTodos.map((item, index) => (
-          <View key={index} style={styles.todos}>
-            <Text>{item}</Text>
+        {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
+          <View
+            key={index}
+            style={[
+              styles.todos,
+              { backgroundColor: getCategoryColor(item.category).bg },
+            ]}
+          >
+            <View style={{ width: "85%" }}>
+              <Text
+                style={[
+                  styles.todoCatText,
+                  { color: getCategoryColor(item.category).text },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.category.split("-")[0]}
+              </Text>
+              <Text
+                style={[
+                  styles.todoNameText,
+                  { color: getCategoryColor(item.category).text },
+                ]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {item.name}
+              </Text>
+            </View>
+            <View>
+              <CheckBox />
+            </View>
           </View>
         ))}
       </View>
@@ -318,6 +377,7 @@ const styles = StyleSheet.create({
     backgroundColor: themeColors.bar,
     paddingVertical: "5%",
     paddingHorizontal: "7%",
+    marginBottom: 35,
   },
   todoHeader: {
     flexDirection: "row",
@@ -331,13 +391,23 @@ const styles = StyleSheet.create({
 
   todos: {
     flex: 1,
-    backgroundColor: categories.category1.bg,
+    width: "100%",
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     borderRadius: 13,
     marginTop: 21,
     paddingVertical: "5%",
     paddingHorizontal: "7%",
     width: "100%",
     height: 77,
+  },
+  todoNameText: {
+    fontSize: 21,
+    fontWeight: 500,
+  },
+  todoCatText: {
+    fontSize: 13,
   },
 });
 
