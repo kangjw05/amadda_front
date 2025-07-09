@@ -71,28 +71,28 @@ const GroupListScreen = () => {
     });
 
     try {
-      const creator = userInfo?.nickname || userInfo?.username || "알수없음";
+      const creator = userInfo?.name || "알수없음";
       // 생성 API 호출
       const response = await axios.post(
         "http://ser.iptime.org:8000/group/create_group", 
         {
-        name: groupName,
-        password: groupPassword,
-        group_color: "group10"
+          name: groupName,
+          password: groupPassword,
+          group_color: "group10"
         },
         {
           headers: {
-            "Content-Type" : "applicaton/json"
+            "Content-Type": "application/json"
           }
         }
       );
       // 응답 예시: { code: "QWE789" }
-      const newCode = response.data;
+      const newCode = response.data.code;
 
       // 그룹 목록에 추가
       const newGroup = {
         name: groupName,
-        creator: userInfo?.userName,
+        creator: userInfo?.name,
         code: newCode,
         password: groupPassword,
         colorKey: "group10",
@@ -102,6 +102,7 @@ const GroupListScreen = () => {
       closeModal();
     } catch (error) {
       console.error("그룹 생성 실패:", error);
+      console.error("그룹 생성 실패:", error.response.data);
       Alert.alert("에러", "그룹 생성에 실패했습니다.");
     }
   };
