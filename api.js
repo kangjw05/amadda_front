@@ -7,58 +7,56 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
-  withCredentials: true,
+  withCredentials: true, // 서버 쿠키 필요시
 });
 
-// 요청 인터셉터
-api.interceptors.request.use(async (config) => {
-  const token = await SecureStore.getItemAsync("accessToken");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
+// ✅ 요청 인터셉터: SecureStore에서 accessToken 꺼내기
+api.interceptors.request.use(
+  async (config) => {
+    const token = await SecureStore.getItemAsync("accessToken");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
 
-// 응답 인터셉터
+// ✅ 응답 인터셉터: 자동 토큰 재발급
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
     const originalRequest = error.config;
 
-    // 401 처리
+    // AccessToken 만료일 경우
     if (
       error.response &&
       error.response.status === 401 &&
-      !originalRequest.__isRetryRequest
+      !originalRequest._retry
     ) {
-      console.log("Access Token 만료, Refresh 시도");
-      originalRequest.__isRetryRequest = true;
-
+      originalRequest._retry = true;
       try {
-        const refreshRes = await fetch(`${API_BASE_URL}/users/refresh`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          // credentials: "include", // 필요 시 켜세요
-        });
+        // Refresh API 호출
+        const refreshResponse = await axios.post(
+          `${API_BASE_URL}/users/refresh_token`,
+          {},
+          {
+            withCredentials: true, // 서버에서 refresh_token 쿠키 사용
+          }
+        );
 
-        const data = await refreshRes.json();
-        if (refreshRes.ok) {
-          await SecureStore.setItemAsync("accessToken", data.access_token);
-          await SecureStore.setItemAsync("refreshToken", data.refresh_token);
-          console.log("Refresh 성공, 재시도");
+        const newAccessToken = refreshResponse.data.access_token;
 
-          // Authorization 헤더 갱신
-          originalRequest.headers.Authorization = `Bearer ${data.access_token}`;
-          return api(originalRequest);
-        } else {
-          console.log("Refresh 실패, 로그아웃 필요");
-          await SecureStore.deleteItemAsync("accessToken");
-          await SecureStore.deleteItemAsync("refreshToken");
-        }
-      } catch (err) {
-        console.error("Refresh 과정에서 오류", err);
-        await SecureStore.deleteItemAsync("accessToken");
-        await SecureStore.deleteItemAsync("refreshToken");
+        // 새 accessToken 저장
+        await SecureStore.setItemAsync("accessToken", newAccessToken);
+
+        // Authorization 헤더 갱신 후 재요청
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        console.log("Refresh Token 만료:", refreshError);
+        // refresh도 실패하면 reject
+        return Promise.reject(refreshError);
       }
     }
 
