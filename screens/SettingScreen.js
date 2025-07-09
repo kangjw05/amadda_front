@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext} from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -24,7 +24,7 @@ import { AuthContext } from "../context/AuthContext";
 
 const SettingScreen = ({ setIsLoggedIn }) => {
   const navigation = useNavigation();
-  const {userInfo} = useContext(AuthContext);
+  const { userInfo, setUserInfo } = useContext(AuthContext);
 
   const [account, setAccount] = useState("");
 
@@ -49,11 +49,54 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   };
 
   const saveAccount = async () => {
-    if (account === "") {
+    if (account.trim() === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
       return;
     }
-    setIsEditingAccount(false);
+
+    try {
+      const accessToken = await SecureStore.getItemAsync("accessToken");
+      console.log("내 accessToken:", accessToken);
+
+      const response = await fetch(
+        "http://ser.iptime.org:8000/users/change_name",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ name: account.trim() }),
+        }
+      );
+
+      let data = null;
+      let responseText = "";
+      const contentType = response.headers.get("Content-Type");
+
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
+        responseText = await response.text();
+      }
+
+      if (!response.ok) {
+        console.error("서버 응답 오류:", data || responseText);
+        Alert.alert(
+          "업데이트 실패",
+          (data && data.detail) || responseText || "이름을 변경할 수 없습니다."
+        );
+        return;
+      }
+
+      setIsEditingAccount(false);
+
+      Alert.alert("완료", "이름이 성공적으로 변경되었습니다.");
+      setUserInfo({ ...userInfo, name: account.trim() });
+    } catch (error) {
+      console.error("네트워크 오류:", error);
+      Alert.alert("오류", "서버에 연결할 수 없습니다.");
+    }
   };
 
   const [categoriesList, setCategoriesList] = useState([
@@ -133,6 +176,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
 
       const response = await fetch(
         "http://ser.iptime.org:8000/users/expire_token",
+
         {
           method: "POST",
           headers: {
@@ -158,6 +202,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       Alert.alert("오류", "서버에 연결할 수 없습니다.");
     }
   };
+
   return (
     <View style={styles.fullcontainer}>
       <View>
@@ -168,80 +213,84 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       </View>
       <ScrollView
         style={{ flex: 1, backgroundColor: themeColors.bg }}
-        contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={styles.information}>
-        <View style={styles.leftpannel}>
-          <Image
-            source={require("../assets/images/userIcon.png")}
-            style={styles.icon}
-          />
-        </View>
-        <View style={styles.rightpannel}>
-          <View style={styles.inputRow}>
-            <Text style={styles.label}>계정</Text>
-            <View style={styles.inputContainer}>
-            {isEditingAccount ? (
-                <TextInput
-                  placeholder={userInfo?.name}
-                  value={account}
-                  onChangeText={setAccount}
-                  onBlur={saveAccount}
-                  autoFocus
-                  style={styles.input}
-                  maxLength={16}
-                />
-              ) : (
-                <Text style={styles.input}>{userInfo?.name}</Text>
-              )}
-            <TouchableOpacity onPress={() => setIsEditingAccount(!isEditingAccount)}>
-              <Image
-                source={require("../assets/images/pencilIcon.png")}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-            </View>
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        <View style={styles.information}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/userIcon.png")}
+              style={styles.icon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
-              <Text style={styles.label}>이메일</Text>
+              <Text style={styles.label}>계정</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.input}>{userInfo?.email}</Text>
+                {isEditingAccount ? (
+                  <TextInput
+                    placeholder={userInfo?.name}
+                    value={account}
+                    onChangeText={setAccount}
+                    onBlur={saveAccount}
+                    autoFocus
+                    style={styles.input}
+                    maxLength={16}
+                  />
+                ) : (
+                  <Text style={styles.input}>{userInfo?.name}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => setIsEditingAccount(!isEditingAccount)}
+                >
+                  <Image
+                    source={require("../assets/images/pencilIcon.png")}
+                    style={styles.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>이메일</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.input}>{userInfo?.email}</Text>
+                </View>
               </View>
             </View>
           </View>
         </View>
-      </View>
-      <View style={styles.information}>
-        <View style={styles.leftpannel}>
-          <Image
-            source={require("../assets/images/tagIcon.png")}
-            style={styles.icon}
-          />
-        </View>
-        <View style={styles.rightpannel}>
-          <View style={styles.inputRow}>
-            <View style={styles.labelContainer}>
-            <Text style={styles.categoryLabel}>카테고리</Text>
-            <TouchableOpacity 
-            onPress={openCategoryModal}
-            style={styles.addCategoryButton}>
-              <Image
-                source={require("../assets/images/addIcon.png")}
-                style={styles.addIcon} 
-              />
-            </TouchableOpacity>
-            </View>
-            <View style={styles.categoryContainer}>
-              <FlatList
-                data={categoriesList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                    setEditingCategory(item);
-                    setEditingCategoryName(item.name);
-                    setEditingColorKey(item.colorKey);
-                    setIsEditCategoryModalVisible(true);
-                    }}
-                    style={styles.categoryItem}
-                  >
+        <View style={styles.information}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/tagIcon.png")}
+              style={styles.icon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <View style={styles.labelContainer}>
+                <Text style={styles.categoryLabel}>카테고리</Text>
+                <TouchableOpacity
+                  onPress={openCategoryModal}
+                  style={styles.addCategoryButton}
+                >
+                  <Image
+                    source={require("../assets/images/addIcon.png")}
+                    style={styles.addIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.categoryContainer}>
+                <FlatList
+                  data={categoriesList}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingCategory(item);
+                        setEditingCategoryName(item.name);
+                        setEditingColorKey(item.colorKey);
+                        setIsEditCategoryModalVisible(true);
+                      }}
+                      style={styles.categoryItem}
+                    >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
                         style={[
@@ -387,25 +436,26 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     </TouchableOpacity>
                   </View>
                 </View>
-                </TouchableWithoutFeedback>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-          <TouchableOpacity 
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <TouchableOpacity
           style={styles.information}
-          onPress={() => navigation.navigate("ChangePw")}>
-            <View style={styles.leftpannel}>
-              <Image
-                source={require("../assets/images/lockIcon.png")}
-                style={styles.lockIcon}
-              />
+          onPress={() => navigation.navigate("ChangePw")}
+        >
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/lockIcon.png")}
+              style={styles.lockIcon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <Text style={styles.findPWFont}>비밀번호 변경</Text>
             </View>
-            <View style={styles.rightpannel}>
-              <View style={styles.inputRow}>
-                <Text style={styles.findPWFont}>비밀번호 변경</Text>
-            </View>
-            </View>
-          </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.information} onPress={logout}>
           <View style={styles.leftpannel}>
             <Image
@@ -416,10 +466,13 @@ const SettingScreen = ({ setIsLoggedIn }) => {
           <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
               <Text style={styles.outText}>로그아웃</Text>
-              </View>
             </View>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.information}>
+        <TouchableOpacity
+          style={styles.information}
+          onPress={() => navigation.navigate("Deluser")}
+        >
           <View style={styles.leftpannel}>
             <Image
               source={require("../assets/images/userXIcon.png")}
