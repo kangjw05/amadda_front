@@ -13,6 +13,8 @@ import {
   FlatList,
   Button,
 } from "react-native";
+import * as SecureStore from "expo-secure-store";
+
 import { themeColors, categories, groups } from "../Colors";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
@@ -37,10 +39,10 @@ const LoginScreen = ({ onLogin }) => {
       const result = await response.json();
 
       if (response.ok && result.access_token && result.refresh_token) {
-        await AsyncStorage.setItem("accessToken", result.access);
-        await AsyncStorage.setItem("refreshToken", result.refresh_token);
+        await SecureStore.setItemAsync("accessToken", result.access_token);
+        await SecureStore.setItemAsync("refreshToken", result.refresh_token);
         console.log("✅ Access Token 갱신 성공");
-        return result.access;
+        return result.access_token;
       } else {
         throw new Error("토큰 갱신 실패");
       }
@@ -51,7 +53,7 @@ const LoginScreen = ({ onLogin }) => {
   };
 
   const authFetch = async (url, options = {}) => {
-    let token = await AsyncStorage.getItem("accessToken");
+    let token = await SecureStore.getItemAsync("accessToken");
 
     let response = await fetch(url, {
       ...options,
@@ -103,7 +105,7 @@ const LoginScreen = ({ onLogin }) => {
       console.log("✅ 로그인 응답 result:", result);
       if (response.ok && result.access_token) {
         // 토큰 저장
-        await AsyncStorage.setItem("accessToken", result.access_token);
+        await SecureStore.setItemAsync("accessToken", result.access_token);
 
         const protectedRes = await authFetch(
           `${API_BASE_URL}/users/info`
