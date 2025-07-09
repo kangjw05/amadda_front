@@ -9,7 +9,7 @@ import {
   ImageBackground,
 } from "react-native";
 import styles from "../styles/SignUpScreenStyles";
-import axios from "axios";
+import api from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_BASE_URL } from "@env";
 
@@ -31,7 +31,7 @@ const SignUpScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await axios.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
           params: { email: storedEmail },
         });
 
@@ -97,7 +97,7 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await axios.post(
+                const res = await api.post(
                   `${API_BASE_URL}/email/request`,
                   { email },
                   {
@@ -166,7 +166,7 @@ const SignUpScreen = () => {
                   return;
                 }
                 try {
-                  const res = await axios.post(
+                  const res = await api.post(
                     `${API_BASE_URL}/email/verify`,
                     { email, code },
                     {
@@ -295,7 +295,7 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await axios.post(`${API_BASE_URL}/users/register`, 
+                const res = await api.post(`${API_BASE_URL}/users/register`, 
                   {
                     name: username,
                     email,

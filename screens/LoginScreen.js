@@ -1,120 +1,55 @@
-import React, { useState, useEffect, useContext } from "react";
-import { StatusBar } from "expo-status-bar";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import React, { useState, useContext } from "react";
+import { useNavigation } from "@react-navigation/native";
 import {
   Image,
   View,
   Text,
   TextInput,
-  StyleSheet,
   TouchableOpacity,
-  Dimensions,
-  FlatList,
-  Button,
 } from "react-native";
-import { themeColors, categories, groups } from "../Colors";
+import * as SecureStore from "expo-secure-store";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
+import { API_BASE_URL } from "@env";
+import axios from "axios";
+import api from "../api";
 
 const LoginScreen = ({ onLogin }) => {
   const navigation = useNavigation();
   const [id, setId] = useState("");
   const [pw, setPw] = useState("");
-
   const { setUserInfo } = useContext(AuthContext);
-  const refreshAccessToken = async () => {
-    try {
-      const response = await fetch("http://ser.iptime.org:8000/users/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include", // ✅ 쿠키 전송 필수
-      });
 
-      const result = await response.json();
-
-      if (response.ok && result.access_token && result.refresh_token) {
-        await AsyncStorage.setItem("accessToken", result.access);
-        await AsyncStorage.setItem("refreshToken", result.refresh_token);
-        console.log("✅ Access Token 갱신 성공");
-        return result.access;
-      } else {
-        throw new Error("토큰 갱신 실패");
-      }
-    } catch (error) {
-      console.error("토큰 갱신 중 오류:", error);
-      throw error;
-    }
-  };
-
-  const authFetch = async (url, options = {}) => {
-    let token = await AsyncStorage.getItem("accessToken");
-
-    let response = await fetch(url, {
-      ...options,
-      headers: {
-        ...(options.headers || {}),
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-    });
-
-    if (response.status === 401) {
-      try {
-        // 토큰 만료 → 새로 받기
-        const newToken = await refreshAccessToken();
-
-        // 재요청
-        response = await fetch(url, {
-          ...options,
-          headers: {
-            ...(options.headers || {}),
-            Authorization: `Bearer ${newToken}`,
-            "Content-Type": "application/json",
-          },
-        });
-      } catch (error) {
-        alert("세션이 만료되었습니다. 다시 로그인해주세요.");
-        return;
-      }
-    }
-
-    return response;
-  };
-
-  //이게 로그인
   const login = async () => {
-    const formBody = `username=${encodeURIComponent(
-      id
-    )}&password=${encodeURIComponent(pw)}`;
-
     try {
-      const response = await fetch("http://ser.iptime.org:8000/users/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        credentials: "include",
-        body: formBody,
-      });
+      // 로그인 요청
+      const response = await axios.post(
+        `${API_BASE_URL}/users/login`,
+        `username=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`,
+        {
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          withCredentials: true, // 쿠키에 refresh_token 저장
+        }
+      );
 
-      const result = await response.json();
-      console.log("✅ 로그인 응답 result:", result);
-      if (response.ok && result.access_token) {
-        // 토큰 저장
-        await AsyncStorage.setItem("accessToken", result.access_token);
+      const result = response.data;
+      console.log("로그인 응답 result:", result);
 
-        const protectedRes = await authFetch(
-          "http://ser.iptime.org:8000/users/me"
-        );
-        const protectedData = await protectedRes.json();
-        console.log("🔒 보호된 유저 데이터:", protectedData);
+      // 서버에서 Access Token 내려주는지 확인
+      if (response.status === 200 && result.access_token) {
+        // Access Token만 저장
+        await SecureStore.setItemAsync("accessToken", String(result.access_token));
+        console.log("Access token 저장 완료");
 
-        setUserInfo(protectedData); // ✅ 전역 상태로 저장
-        onLogin(); // 로그인 성공 후 이동
+        // 사용자 정보 가져오기 (api.js에 인터셉터가 Authorization 헤더 자동 추가)
+        const protectedRes = await api.get("/users/info");
+        const protectedData = protectedRes.data;
+        console.log("보호된 유저 데이터:", protectedData);
+
+        setUserInfo(protectedData); // 전역 상태 업데이트
+        onLogin(); // 화면 전환
       } else {
-        console.log("❌ 로그인 실패: 응답 비정상 또는 토큰 없음");
-        r;
+        console.log("로그인 실패: 응답 비정상 또는 토큰 없음");
         alert("로그인 실패: " + JSON.stringify(result));
       }
     } catch (err) {
@@ -122,6 +57,7 @@ const LoginScreen = ({ onLogin }) => {
       alert("서버 연결 실패");
     }
   };
+
 
   return (
     <View style={styles.fullcontainer}>
@@ -133,10 +69,10 @@ const LoginScreen = ({ onLogin }) => {
       <View style={styles.container_login1}>
         <Image
           source={require("../assets/images/personIcon.png")}
-          style={styles.Login_idpw} //아직 Login_id 스타일 없음.
+          style={styles.Login_idpw}
         />
         <TextInput
-          placeholder={"ID"}
+          placeholder="ID"
           style={styles.input}
           value={id}
           onChangeText={setId}
@@ -146,12 +82,12 @@ const LoginScreen = ({ onLogin }) => {
       <View style={styles.container_login1}>
         <Image
           source={require("../assets/images/Lock.png")}
-          style={styles.Login_idpw} //아직 Login_pw 스타일 없음.
+          style={styles.Login_idpw}
         />
         <TextInput
-          placeholder={"PW"}
+          placeholder="PW"
           style={styles.input}
-          // secureTextEntry
+          secureTextEntry
           value={pw}
           onChangeText={setPw}
         />
@@ -167,9 +103,7 @@ const LoginScreen = ({ onLogin }) => {
         <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
           <Text style={styles.fpw}>비밀번호를 잊으셨나요?</Text>
         </TouchableOpacity>
-
-        <Text></Text>
-
+        <Text />
         <TouchableOpacity onPress={() => navigation.navigate("SignUp")}>
           <Text style={styles.join}>회원이 아니신가요?</Text>
         </TouchableOpacity>
