@@ -82,8 +82,6 @@ const PersonalCalendar = () => {
 
   const handleDeleteTodo = async (uuid, dateKey) => {
     try {
-      console.log(uuid);
-
       await api.post("/plan/del_plan", {
         uuid: uuid,
       });
@@ -152,31 +150,35 @@ const PersonalCalendar = () => {
         });
 
         // 그룹 부분 로딩
-        // const userInfo = await api.get("/users/info");
-        // const userInfo = await AsyncStorage.getItem("groupList");
+        const userInfo = await api.get("/users/info");
         // console.log(userInfo);
-        // for (const group of userInfo.data.groups) {
-        //   const groupRes = await api.get("plan/group_plans", {
-        //     code: group.code,
-        //   });
+        for (const group of userInfo.data.groups) {
+          const groupRes = await api.get("plan/group_plans", {
+            params: {
+              code: group.code,
+            },
+            headers: {
+              Authorization: `Bearer ${group.uuid}`,
+            },
+          });
 
-        //   const groupTodos = groupRes.data;
+          const groupTodos = groupRes.data;
 
-        //   (groupTodos || []).forEach((todo) => {
-        //     const dateKey = todo.date.split("T")[0];
-        //     if (!tempTodos[dateKey]) {
-        //       tempTodos[dateKey] = [];
-        //     }
+          (groupTodos || []).forEach((todo) => {
+            const dateKey = todo.date.split("T")[0];
+            if (!tempTodos[dateKey]) {
+              tempTodos[dateKey] = [];
+            }
 
-        //     tempTodos[dateKey].push({
-        //       uuid: todo.uuid,
-        //       name: todo.name,
-        //       category: todo.category,
-        //       isActive: !todo.is_active,
-        //       isGroup: true,
-        //     });
-        //   });
-        // }
+            tempTodos[dateKey].push({
+              uuid: todo.uuid,
+              name: todo.name,
+              category: todo.category,
+              isActive: !todo.is_active,
+              isGroup: true,
+            });
+          });
+        }
 
         setTodos(tempTodos);
         // console.log("퍼스널", tempTodos); // 테스트
@@ -195,6 +197,8 @@ const PersonalCalendar = () => {
         onAddTodo={handleAddTodo}
         onDeleteTodo={handleDeleteTodo}
         onToggleTodo={handleToggleTodo}
+        permission={0}
+        personal={true}
       />
     </View>
   );

@@ -23,7 +23,14 @@ const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo, onToggleTodo }) => {
+const Calendar = ({
+  todoData = {},
+  onAddTodo,
+  onDeleteTodo,
+  onToggleTodo,
+  permission,
+  personal,
+}) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -220,6 +227,12 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo, onToggleTodo }) => {
 
   // 스와이프 삭제 렌더링
   const renderRightActions = (item) => {
+    // 만약 플랜이 그룹 플랜인데
+    // 퍼스널 캘린더 이거나 권한이 없다면 삭제 X
+    if (item.isGroup) {
+      if (personal || permission >= 2) return null;
+    }
+
     const handleDelete = () => {
       onDeleteTodo(item.uuid, getSelectedDateFormat());
     };
@@ -294,12 +307,14 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo, onToggleTodo }) => {
           <Text style={styles.todoHeaderText}>
             {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일
           </Text>
-          <TouchableOpacity
-            style={styles.todoAddBtn}
-            onPress={() => setIsAddTodoVisible(true)}
-          >
-            <FontAwesome name="plus" size={19} color={themeColors.text} />
-          </TouchableOpacity>
+          {permission < 2 && (
+            <TouchableOpacity
+              style={styles.todoAddBtn}
+              onPress={() => setIsAddTodoVisible(true)}
+            >
+              <FontAwesome name="plus" size={19} color={themeColors.text} />
+            </TouchableOpacity>
+          )}
         </View>
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
           <View key={item.uuid} style={styles.todoWrapper}>
@@ -333,18 +348,26 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo, onToggleTodo }) => {
                   </Text>
                 </View>
                 <View>
-                  <CheckBox
-                    color={getTodoColor(item).checkbox}
-                    uuid={item.uuid}
-                    initialChecked={item.isActive}
-                    onToggle={(newActive) =>
-                      onToggleTodo(
-                        item.uuid,
-                        getSelectedDateFormat(),
-                        newActive
-                      )
-                    }
-                  />
+                  {item.isGroup ? (
+                    <Text
+                      style={{ fontSize: 15, color: getTodoColor(item).text }}
+                    >
+                      그룹
+                    </Text>
+                  ) : (
+                    <CheckBox
+                      color={getTodoColor(item).checkbox}
+                      uuid={item.uuid}
+                      initialChecked={item.isActive}
+                      onToggle={(newActive) =>
+                        onToggleTodo(
+                          item.uuid,
+                          getSelectedDateFormat(),
+                          newActive
+                        )
+                      }
+                    />
+                  )}
                 </View>
               </View>
             </Swipeable>
