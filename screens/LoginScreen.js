@@ -10,7 +10,6 @@ import {
 import * as SecureStore from "expo-secure-store";
 import { AuthContext } from "../context/AuthContext";
 import styles from "../styles/LoginScreenStyles";
-import { API_BASE_URL } from "@env";
 import api from "../api"; // axios 인스턴스 사용
 
 const LoginScreen = ({ onLogin }) => {

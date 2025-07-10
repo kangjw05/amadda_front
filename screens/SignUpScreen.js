@@ -12,7 +12,6 @@ import {
 import styles from "../styles/SignUpScreenStyles";
 import api from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_URL } from "@env";
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
@@ -31,7 +30,7 @@ const SignUpScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
         });
 
@@ -100,13 +99,8 @@ const SignUpScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -170,13 +164,8 @@ const SignUpScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
@@ -300,17 +289,12 @@ const SignUpScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/users/register`,
+                  "/users/register",
                   {
                     name: username,
                     email,
                     password,
                   },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
                 Alert.alert("회원가입 성공", "회원가입이 완료되었습니다.", {
                   cancelable: false,
