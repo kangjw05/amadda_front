@@ -8,6 +8,7 @@ import styles from "../styles/PersonalCalendarStyles";
 import Header from "../components/header";
 import Calendar from "../components/calendar";
 
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
 import { jwtDecode } from "jwt-decode";
@@ -61,7 +62,7 @@ const PersonalCalendar = () => {
         uuid: response.data.uuid,
         name: response.data.name,
         category: response.data.category,
-        isActive: response.data.is_active === 0,
+        isActive: !response.data.is_active,
         isGroup: false,
       };
 
@@ -105,6 +106,28 @@ const PersonalCalendar = () => {
     });
   };
 
+  const handleToggleTodo = async (uuid, dateKey, newActive) => {
+    try {
+      await api.post("/plan/is_active", {
+        uuid,
+        is_active: !newActive,
+      });
+
+      // 업데이트된 todo 반영
+      setTodos((prev) => {
+        const updated = { ...prev };
+        updated[dateKey] = updated[dateKey].map((todo) =>
+          todo.uuid === uuid ? { ...todo, isActive: newActive } : todo
+        );
+        return updated;
+      });
+      console.log("토글 성공");
+    } catch (err) {
+      console.log("isActive 토글 실패: ", err);
+      alert("토글 실패. 다시 시도해주세요.");
+    }
+  };
+
   useEffect(() => {
     const loadAllPlan = async () => {
       try {
@@ -123,28 +146,37 @@ const PersonalCalendar = () => {
             uuid: todo.uuid,
             name: todo.name,
             category: todo.category,
-            isActive: todo.is_active === 1,
+            isActive: !todo.is_active,
             isGroup: false,
           });
         });
 
-        // // 그룹 부분 로딩
-        // const groupTodos = [...group1_test, ...group2_test, ...group3_test];
-
-        // groupTodos.forEach((todo) => {
-        //   const dateKey = todo.date.split("T")[0];
-        //   if (!tempTodos[dateKey]) {
-        //     tempTodos[dateKey] = [];
-        //   }
-
-        //   tempTodos[dateKey].push({
-        //     uuid: todo.uuid,
-        //     name: todo.name,
-        //     category: todo.category,
-        //     isActive: todo.is_active === 1,
-        //     isGroup: true,
+        // 그룹 부분 로딩
+        // const userInfo = await api.get("/users/info");
+        // const userInfo = await AsyncStorage.getItem("groupList");
+        // console.log(userInfo);
+        // for (const group of userInfo.data.groups) {
+        //   const groupRes = await api.get("plan/group_plans", {
+        //     code: group.code,
         //   });
-        // });
+
+        //   const groupTodos = groupRes.data;
+
+        //   (groupTodos || []).forEach((todo) => {
+        //     const dateKey = todo.date.split("T")[0];
+        //     if (!tempTodos[dateKey]) {
+        //       tempTodos[dateKey] = [];
+        //     }
+
+        //     tempTodos[dateKey].push({
+        //       uuid: todo.uuid,
+        //       name: todo.name,
+        //       category: todo.category,
+        //       isActive: !todo.is_active,
+        //       isGroup: true,
+        //     });
+        //   });
+        // }
 
         setTodos(tempTodos);
         // console.log("퍼스널", tempTodos); // 테스트
@@ -162,6 +194,7 @@ const PersonalCalendar = () => {
         todoData={todos}
         onAddTodo={handleAddTodo}
         onDeleteTodo={handleDeleteTodo}
+        onToggleTodo={handleToggleTodo}
       />
     </View>
   );
