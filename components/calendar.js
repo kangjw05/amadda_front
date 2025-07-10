@@ -14,12 +14,13 @@ import Swipeable from "react-native-gesture-handler/Swipeable";
 import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
 import CheckBox from "./checkbox";
+import AddTodoModal from "./AddTodoModal";
 
 const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const Calendar = ({ todoData = {} }) => {
+const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -170,6 +171,9 @@ const Calendar = ({ todoData = {} }) => {
   // 페이징 이동용 현재 인덱스 정보
   const [currentIndex, setCurrentIndex] = useState(24 + today.getMonth());
 
+  // 모달 이벤트 감지
+  const [isAddTodoVisible, setIsAddTodoVisible] = useState(false);
+
   // 캘린더 컴포넌트 초기 상태로 새로고침 이벤트
   const [refreshing, setRefreshing] = useState(false);
   // 새로고침 함수
@@ -211,9 +215,12 @@ const Calendar = ({ todoData = {} }) => {
     }
   };
 
-  const handleDelete = () => {};
-
-  const renderRightActions = () => {
+  // 삭제 핸들링
+  // 스와이프 삭제 렌더링
+  const renderRightActions = (item) => {
+    const handleDelete = () => {
+      onDeleteTodo(item.uuid, getSelectedDateFormat());
+    };
     return (
       <TouchableOpacity onPress={handleDelete}>
         <View style={styles.deleteButton}>
@@ -285,13 +292,16 @@ const Calendar = ({ todoData = {} }) => {
           <Text style={styles.todoHeaderText}>
             {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일
           </Text>
-          <TouchableOpacity style={styles.todoAddBtn}>
+          <TouchableOpacity
+            style={styles.todoAddBtn}
+            onPress={() => setIsAddTodoVisible(true)}
+          >
             <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
-          <View key={index} style={styles.todoWrapper}>
-            <Swipeable renderRightActions={() => renderRightActions()}>
+          <View key={item.uuid} style={styles.todoWrapper}>
+            <Swipeable renderRightActions={() => renderRightActions(item)}>
               <View
                 style={[
                   styles.todos,
@@ -328,6 +338,13 @@ const Calendar = ({ todoData = {} }) => {
           </View>
         ))}
       </View>
+
+      <AddTodoModal
+        visible={isAddTodoVisible}
+        onClose={() => setIsAddTodoVisible(false)}
+        onAddTodo={onAddTodo}
+        selectedDate={selectedDate}
+      />
     </ScrollView>
   );
 };

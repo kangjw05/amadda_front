@@ -18,6 +18,7 @@ import Calendar from "../components/calendar";
 
 import * as SecureStore from "expo-secure-store";
 import api from "../api";
+import { jwtDecode } from "jwt-decode";
 
 const PersonalCalendar = () => {
   const todos_test = {
@@ -300,6 +301,92 @@ const PersonalCalendar = () => {
 
   const [todos, setTodos] = useState({});
 
+  const ensureValidAccessToken = async () => {
+    try {
+      // 1. 유효성 검사
+      await api.get("/users/verify_token");
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        // 2. 만료됐으면 새로 발급
+        console.log("Access Token 만료, 새로 발급 요청");
+        try {
+          const refreshResponse = await api.post("users/refresh_token");
+          const newAccessToken = refreshResponse.data.accessToken;
+          await SecureStore.setItemAsync("accessToken", newAccessToken);
+          console.log("Access Token 재발급 완료");
+        } catch (refreshError) {
+          console.error("토큰 재발급 실패:", refreshError);
+          throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
+      } else {
+        throw error;
+      }
+    }
+  };
+
+  const handleAddTodo = async (newTodo) => {
+    try {
+      //0, access token 유효성 검사
+      await ensureValidAccessToken();
+
+      //1, 토큰 가져오기, uuid 추출
+      const token = await SecureStore.getItemAsync("accessToken");
+      const decoded = jwtDecode(token);
+
+      // 2, 새 일정 post
+      const response = await api.post("/plan/push_plan", {
+        name: newTodo.name,
+        category: newTodo.category,
+        date: newTodo.date,
+        create_at: decoded.uuid,
+      });
+
+      // 3, 렌더할 새 일정 추가
+      const addedTodo = {
+        uuid: response.data.uuid,
+        name: response.data.name,
+        category: response.data.category,
+        isActive: response.data.is_active === 1,
+        isGroup: false,
+      };
+
+      // 4, 새 일정 렌더
+      setTodos((prev) => {
+        const dateKey = response.data.date.split("T")[0];
+        const updated = { ...prev };
+        if (!updated[dateKey]) updated[dateKey] = [];
+        updated[dateKey].push(addedTodo);
+        return updated;
+      });
+    } catch (err) {
+      console.log("일정 추가 실패: ", err);
+    }
+  };
+
+  const handleDeleteTodo = async (uuid, dateKey) => {
+    try {
+      await api.post("/plan/del_plan", {
+        uuid: uuid,
+      });
+
+      // 성공 시 사용자에게 알림
+      alert("삭제 완료!");
+    } catch (err) {
+      console.log("플랜 삭제 실패: ", err);
+      alert("삭제 실패. 다시 시도해주세요.");
+      return; // 실패했으면 setTodos 건너뛰기
+    }
+
+    // 삭제 성공한 경우에만 state 업데이트
+    setTodos((prev) => {
+      const filtered = prev[dateKey].filter((item) => item.uuid !== uuid);
+      return {
+        ...prev,
+        [dateKey]: filtered,
+      };
+    });
+  };
+
   useEffect(() => {
     const loadAllPlan = async () => {
       try {
@@ -323,22 +410,23 @@ const PersonalCalendar = () => {
           });
         });
 
-        const groupTodos = [...group1_test, ...group2_test, ...group3_test];
+        // // 그룹 부분 로딩
+        // const groupTodos = [...group1_test, ...group2_test, ...group3_test];
 
-        groupTodos.forEach((todo) => {
-          const dateKey = todo.date.split("T")[0];
-          if (!tempTodos[dateKey]) {
-            tempTodos[dateKey] = [];
-          }
+        // groupTodos.forEach((todo) => {
+        //   const dateKey = todo.date.split("T")[0];
+        //   if (!tempTodos[dateKey]) {
+        //     tempTodos[dateKey] = [];
+        //   }
 
-          tempTodos[dateKey].push({
-            uuid: todo.uuid,
-            name: todo.name,
-            category: todo.category,
-            isActive: todo.is_active === 1,
-            isGroup: true,
-          });
-        });
+        //   tempTodos[dateKey].push({
+        //     uuid: todo.uuid,
+        //     name: todo.name,
+        //     category: todo.category,
+        //     isActive: todo.is_active === 1,
+        //     isGroup: true,
+        //   });
+        // });
 
         setTodos(tempTodos);
         // console.log("퍼스널", tempTodos); // 테스트
@@ -346,49 +434,17 @@ const PersonalCalendar = () => {
         console.log("plan update 실패", error);
       }
     };
-
     loadAllPlan();
   }, []);
-
-  // const test_post = async () => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync("accessToken");
-  //     const response = await api.post("/plan/push_plan", {
-  //       name: "testD",
-  //       create_at: token,
-  //       date: "2025-07-09T22:33:52.841Z",
-  //       category: "testC-3",
-  //     });
-  //   } catch (error) {
-  //     console.log(error);
-  //   }
-  // };
-
-  const test_post = async () => {
-    try {
-      const token = await SecureStore.getItemAsync("accessToken");
-      const resInfo = await api.get("users/info");
-      console.log("🔑 현재 토큰:", token);
-
-      const response = await api.post("/plan/push_plan", {
-        name: "testD",
-        create_at: "test",
-        date: new Date().toISOString(),
-        category: "중요-2",
-      });
-
-      console.log("✅ 성공:", response.data);
-    } catch (error) {
-      console.log("❌ 에러:", error.response?.data || error.message);
-    }
-  };
-
-  test_post();
 
   return (
     <View style={styles.container}>
       <Header />
-      <Calendar todoData={todos} />
+      <Calendar
+        todoData={todos}
+        onAddTodo={handleAddTodo}
+        onDeleteTodo={handleDeleteTodo}
+      />
     </View>
   );
 };
