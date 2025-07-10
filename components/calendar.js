@@ -15,6 +15,7 @@ import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
 import CheckBox from "./checkbox";
 import AddTodoModal from "./AddTodoModal";
+import api from "../api";
 
 const screenWidth = Dimensions.get("window").width;
 
@@ -215,7 +216,6 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
     }
   };
 
-  // 삭제 핸들링
   // 스와이프 삭제 렌더링
   const renderRightActions = (item) => {
     const handleDelete = () => {
@@ -228,6 +228,16 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
         </View>
       </TouchableOpacity>
     );
+  };
+
+  const handleToggleIsActive = async (uuid, isActive) => {
+    try {
+      await api.post("/plan/is_active", { uuid, is_active: isActive });
+      console.log("isActive 업데이트 성공");
+    } catch (error) {
+      console.log("isActive 업데이트 실패:", error);
+      alert("상태 업데이트에 실패했습니다.");
+    }
   };
 
   return (
@@ -331,7 +341,12 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
                   </Text>
                 </View>
                 <View>
-                  <CheckBox color={getTodoColor(item).checkbox} />
+                  <CheckBox
+                    color={getTodoColor(item).checkbox}
+                    uuid={item.uuid}
+                    initialChecked={item.isActive}
+                    onToggle={handleToggleIsActive}
+                  />
                 </View>
               </View>
             </Swipeable>
