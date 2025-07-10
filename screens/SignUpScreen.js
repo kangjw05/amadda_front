@@ -88,6 +88,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -151,6 +152,7 @@ const SignUpScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -221,6 +223,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={username}
               onChangeText={setUsername}
+              maxLength={9}
             />
           </ImageBackground>
         </View>
@@ -242,6 +245,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -263,6 +267,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
