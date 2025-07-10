@@ -34,9 +34,6 @@ const ChangePwScreen = () => {
         const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
         },
-        {
-          headers: { Authorization: undefined }
-        }
       );
 
         if (ttlRes.data.success) {
@@ -92,7 +89,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
-              maxLength={20}
+              maxLength={45}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -104,13 +101,8 @@ const ChangePwScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -175,13 +167,8 @@ const ChangePwScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
@@ -283,10 +270,14 @@ const ChangePwScreen = () => {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
               }
+              if (password.length < 6) {
+                alert("비밀번호가 너무 짧습니다. 6자 이상으로 입력해주세요.");
+                return;
+              }
 
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/users/change_pass`,
+                  "/users/change_pass",
                   new URLSearchParams({
                     grant_type: "password",
                     username: email,
