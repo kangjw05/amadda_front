@@ -16,15 +16,15 @@ const Header = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 110,
+    height: 100,
     backgroundColor: themeColors.bg,
     justifyContent: "center",
     alignItems: "center",
   },
   headerText: {
     color: themeColors.text,
-    fontSize: 25,
-    fontWeight: 400,
+    fontSize: 21,
+    fontWeight: 500,
   },
 });
 
