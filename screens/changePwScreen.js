@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   ImageBackground,
   ScrollView,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api";
 import { API_BASE_URL } from "@env";
 
@@ -29,9 +31,13 @@ const ChangePwScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        });
+        },
+        {
+          headers: { Authorization: undefined }
+        }
+      );
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
@@ -118,6 +124,7 @@ const ChangePwScreen = () => {
                   alert("예상치 못한 응답이 왔습니다.");
                 }
               } catch (err) {
+                  console.error("전체 에러:", err);
                 if (err.response?.status === 422) {
                   alert("잘못된 이메일 형식입니다.");
                 } else {
@@ -182,6 +189,7 @@ const ChangePwScreen = () => {
                     alert("예상치 못한 응답이 왔습니다.");
                   }
                 } catch (err) {
+                  console.error("전체 에러:", err);
                   // 상태 코드로 분기
                   if (err.response?.status === 409) {
                     setCodeVerified(true);
@@ -255,7 +263,7 @@ const ChangePwScreen = () => {
           />
         </View>
         <View style={styles.buttonPart}>
-          {/* 회원가입 버튼 */}
+          {/* 비밀번호 변겨 버튼 */}
           <TouchableOpacity
             style={styles.joinButton}
             onPress={async () => {
@@ -286,7 +294,7 @@ const ChangePwScreen = () => {
                     },
                   }
                 );
-
+                console.log(res.status);
                 if (res.status >= 200 && res.status < 300) {
                   Alert.alert(
                     "비밀번호 변경 성공",
@@ -298,6 +306,7 @@ const ChangePwScreen = () => {
                   alert("예상치 못한 응답이 왔습니다.");
                 }
               } catch (err) {
+                  console.error("전체 에러:", err);
                 if (err.response?.status === 401) {
                   alert("인증 정보가 유효하지 않습니다.");
                 } else {
@@ -306,7 +315,8 @@ const ChangePwScreen = () => {
                   alert("비밀번호 변경 중 오류가 발생했습니다.");
                 }
               }
-            }}
+            }
+          }
           >
             <Text style={styles.joinButtonText}>변경</Text>
           </TouchableOpacity>
