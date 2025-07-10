@@ -91,7 +91,7 @@ const SettingScreen = () => {
 
       setIsEditingAccount(false);
 
-      Alert.alert("완료", "이름이 성공적으로 변경되었습니다.");
+      Alert.alert("변경 완료", "이름이 성공적으로 변경되었습니다.");
       setUserInfo({ ...userInfo, name: account.trim() });
     } catch (error) {
       console.error("네트워크 오류:", error);
@@ -456,7 +456,27 @@ const SettingScreen = () => {
             </View>
           </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.information} onPress={logout}>
+        <TouchableOpacity
+          style={styles.information}
+          onPress={() => {
+            Alert.alert(
+              "로그아웃",
+              "정말 로그아웃 하시겠습니까?",
+              [
+                {
+                  text: "취소",
+                  style: "cancel",
+                },
+                {
+                  text: "확인",
+                  style: "destructive",
+                  onPress: logout,
+                },
+              ],
+              { cancelable: true }
+            );
+          }}
+        >
           <View style={styles.leftpannel}>
             <Image
               source={require("../assets/images/logoutIcon.png")}
