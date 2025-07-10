@@ -34,10 +34,8 @@ const DeluserScreen = () => {
       try {
         const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        },
-      {
-        headers: { Authorization: undefined }
-      });
+          },
+        );
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
