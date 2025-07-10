@@ -134,6 +134,7 @@ const DeluserScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -192,6 +193,7 @@ const DeluserScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (

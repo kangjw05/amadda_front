@@ -74,6 +74,7 @@ const LoginScreen = ({ onLogin }) => {
           style={styles.input}
           value={id}
           onChangeText={setId}
+          maxLength={20}
         />
       </View>
 
@@ -88,6 +89,7 @@ const LoginScreen = ({ onLogin }) => {
           secureTextEntry
           value={pw}
           onChangeText={setPw}
+          maxLength={16}
         />
       </View>
 

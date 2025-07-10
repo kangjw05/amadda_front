@@ -322,7 +322,7 @@ const SettingScreen = () => {
                     onBlur={saveAccount}
                     autoFocus
                     style={styles.input}
-                    maxLength={16}
+                    maxLength={9}
                   />
                 ) : (
                   <Text style={styles.input}>{userInfo?.name}</Text>
@@ -415,7 +415,7 @@ const SettingScreen = () => {
                     onChangeText={setNewCategoryName}
                     placeholder="카테고리 이름"
                     style={styles.categoryModalInput}
-                    maxLength={16}
+                    maxLength={9}
                   />
                   <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                   <View style={styles.colorGrid}>
@@ -483,7 +483,7 @@ const SettingScreen = () => {
                     onChangeText={setEditingCategoryName}
                     placeholder="카테고리 이름"
                     style={styles.categoryModalInput}
-                    maxLength={16}
+                    maxLength={9}
                   />
                   <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                   <View style={styles.colorGrid}>
