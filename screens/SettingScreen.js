@@ -53,6 +53,9 @@ const SettingScreen = () => {
   };
 
   const saveAccount = async () => {
+    const trimmedName = account.trim();
+    console.log("✅ 최종 전송 name:", trimmedName);
+    console.log("📦 보내는 body:", JSON.stringify({ name: trimmedName }));
     if (account.trim() === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
       return;
@@ -61,7 +64,6 @@ const SettingScreen = () => {
     try {
       const accessToken = await SecureStore.getItemAsync("accessToken");
       console.log("내 accessToken:", accessToken);
-
       const response = await fetch(
         "http://ser.iptime.org:8000/users/change_name",
         {
@@ -70,7 +72,7 @@ const SettingScreen = () => {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          body: JSON.stringify({ name: account.trim() }),
+          body: JSON.stringify({ name: trimmedName }),
         }
       );
 
