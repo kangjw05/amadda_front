@@ -12,7 +12,6 @@ import {
 import styles from "../styles/SignUpScreenStyles";
 import api from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { API_BASE_URL } from "@env";
 
 const SignUpScreen = () => {
   const navigation = useNavigation();
@@ -31,7 +30,7 @@ const SignUpScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
         });
 
@@ -88,6 +87,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -99,18 +99,13 @@ const SignUpScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
                 if (res.status === 200) {
-                  alert("인증 메일이 발송되었습니다.");
+                  Alert.alert("메일 발송 완료", "인증 메일이 발송되었습니다.");
                   const sendTime = Date.now();
                   await AsyncStorage.multiSet([
                     ["emailSendTime", sendTime.toString()],
@@ -151,6 +146,7 @@ const SignUpScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -168,17 +164,12 @@ const SignUpScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
-                    alert("인증이 완료되었습니다.");
+                    Alert.alert("인증 완료", "인증이 완료되었습니다.");
                   } else {
                     // 혹시 다른 2xx 상태가 있을 경우 대비
                     alert("예상치 못한 응답이 왔습니다.");
@@ -221,6 +212,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={username}
               onChangeText={setUsername}
+              maxLength={9}
             />
           </ImageBackground>
         </View>
@@ -242,6 +234,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -263,6 +256,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
@@ -293,19 +287,18 @@ const SignUpScreen = () => {
                 alert("이메일 인증을 완료해주세요.");
                 return;
               }
+              if (password.length < 6) {
+                alert("비밀번호가 너무 짧습니다. 6자 이상으로 입력해주세요.");
+                return;
+              }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/users/register`,
+                  "/users/register",
                   {
                     name: username,
                     email,
                     password,
                   },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
                 Alert.alert("회원가입 성공", "회원가입이 완료되었습니다.", {
                   cancelable: false,

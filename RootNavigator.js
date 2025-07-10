@@ -35,10 +35,7 @@ export default function RootNavigator() {
         </>
       ) : (
         <>
-          <Stack.Screen
-            name="Main"
-            options={{ headerShown: false }}
-          >
+          <Stack.Screen name="Main" options={{ headerShown: false }}>
             {() => <MainTab />}
           </Stack.Screen>
           <Stack.Screen

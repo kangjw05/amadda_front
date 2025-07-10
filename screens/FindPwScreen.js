@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   ImageBackground,
   ScrollView,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api";
 import { API_BASE_URL } from "@env";
 
@@ -29,9 +31,10 @@ const FindPwScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        });
+        },
+      );
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
@@ -86,6 +89,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={45}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -97,13 +101,8 @@ const FindPwScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json"
-                    }
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -150,6 +149,7 @@ const FindPwScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -167,13 +167,8 @@ const FindPwScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json"
-                      }
-                    }
                   );
                     if (res.status === 200) {
                       setCodeVerified(true);
@@ -223,6 +218,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -244,6 +240,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
@@ -274,10 +271,13 @@ const FindPwScreen = () => {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
               }
-
+              if (password.length < 6) {
+                alert("비밀번호가 너무 짧습니다. 6자 이상으로 입력해주세요.");
+                return;
+              }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/users/change_pass`,
+                  "/users/change_pass",
                   new URLSearchParams({
                     grant_type: "password",
                     username: email,

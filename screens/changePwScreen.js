@@ -8,7 +8,9 @@ import {
   TouchableOpacity,
   ImageBackground,
   ScrollView,
+  Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api";
 import { API_BASE_URL } from "@env";
 
@@ -29,9 +31,10 @@ const ChangePwScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        });
+        },
+      );
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
@@ -86,6 +89,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={45}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -97,13 +101,8 @@ const ChangePwScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -118,6 +117,7 @@ const ChangePwScreen = () => {
                   alert("예상치 못한 응답이 왔습니다.");
                 }
               } catch (err) {
+                  console.error("전체 에러:", err);
                 if (err.response?.status === 422) {
                   alert("잘못된 이메일 형식입니다.");
                 } else {
@@ -149,6 +149,7 @@ const ChangePwScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -166,13 +167,8 @@ const ChangePwScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
@@ -182,6 +178,7 @@ const ChangePwScreen = () => {
                     alert("예상치 못한 응답이 왔습니다.");
                   }
                 } catch (err) {
+                  console.error("전체 에러:", err);
                   // 상태 코드로 분기
                   if (err.response?.status === 409) {
                     setCodeVerified(true);
@@ -220,6 +217,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -241,6 +239,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
@@ -255,7 +254,7 @@ const ChangePwScreen = () => {
           />
         </View>
         <View style={styles.buttonPart}>
-          {/* 회원가입 버튼 */}
+          {/* 비밀번호 변겨 버튼 */}
           <TouchableOpacity
             style={styles.joinButton}
             onPress={async () => {
@@ -271,10 +270,14 @@ const ChangePwScreen = () => {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
               }
+              if (password.length < 6) {
+                alert("비밀번호가 너무 짧습니다. 6자 이상으로 입력해주세요.");
+                return;
+              }
 
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/users/change_pass`,
+                  "/users/change_pass",
                   new URLSearchParams({
                     grant_type: "password",
                     username: email,
@@ -286,7 +289,7 @@ const ChangePwScreen = () => {
                     },
                   }
                 );
-
+                console.log(res.status);
                 if (res.status >= 200 && res.status < 300) {
                   Alert.alert(
                     "비밀번호 변경 성공",
@@ -298,6 +301,7 @@ const ChangePwScreen = () => {
                   alert("예상치 못한 응답이 왔습니다.");
                 }
               } catch (err) {
+                  console.error("전체 에러:", err);
                 if (err.response?.status === 401) {
                   alert("인증 정보가 유효하지 않습니다.");
                 } else {
@@ -306,7 +310,8 @@ const ChangePwScreen = () => {
                   alert("비밀번호 변경 중 오류가 발생했습니다.");
                 }
               }
-            }}
+            }
+          }
           >
             <Text style={styles.joinButtonText}>변경</Text>
           </TouchableOpacity>
