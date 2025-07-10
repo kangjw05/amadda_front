@@ -21,6 +21,7 @@ import styles from "../styles/SettingScreenStyles";
 import Header from "../components/header";
 import LoginScreen from "./LoginScreen";
 import { AuthContext } from "../context/AuthContext";
+import api from "../api";
 
 const SettingScreen = () => {
   const navigation = useNavigation();
@@ -64,15 +65,10 @@ const SettingScreen = () => {
     try {
       const accessToken = await SecureStore.getItemAsync("accessToken");
       console.log("내 accessToken:", accessToken);
-      const response = await fetch(
-        "http://ser.iptime.org:8000/users/change_name",
+      const response = await api.post(
+        "/users/change_name",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify({ name: trimmedName }),
+          name: account
         }
       );
 
@@ -141,24 +137,13 @@ const SettingScreen = () => {
     await saveCategoriesList(newList);
     setIsCategoryModalVisible(false);
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
-
       // colorKey에서 숫자 추출 (예: "category3" → "3")
       const colorIndex = selectedColorKey.replace("category", "");
 
-      const payload = {
-        category: `${newCategory.name}-${colorIndex}`,
-      };
-
-      const response = await fetch(
-        "http://ser.iptime.org:8000/plan/push_category",
+      const response = await api.post(
+        "/plan/push_category",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
+          category: `${newCategory.name}-${colorIndex}`
         }
       );
 
@@ -208,7 +193,6 @@ const SettingScreen = () => {
 
     // 🔽 서버로 삭제 요청
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
       const colorIndex = editingCategory.colorKey.replace("category", ""); // "category3" -> "3"
 
       const payload = {
@@ -217,15 +201,10 @@ const SettingScreen = () => {
 
       console.log("삭제 요청 payload:", payload);
 
-      const response = await fetch(
-        "http://ser.iptime.org:8000/plan/del_category",
+      const response = await api.post(
+        "/plan/del_category",
         {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-          body: JSON.stringify(payload),
+          category: `${editingCategory.name}-${colorIndex}`,
         }
       );
 
@@ -262,19 +241,7 @@ const SettingScreen = () => {
 
   const logout = async () => {
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
-
-      const response = await fetch(
-        "http://ser.iptime.org:8000/users/expire_token",
-
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          credentials: "include",
-        }
-      );
+      const response = await api.post("/users/expire_token");
 
       const responseText = await response.text();
       console.log("로그아웃 응답:", response.status, responseText);

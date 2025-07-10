@@ -24,11 +24,9 @@ const LoginScreen = ({ onLogin }) => {
     const formBody = `username=${encodeURIComponent(id)}&password=${encodeURIComponent(pw)}`;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/users/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        credentials: "include",
-        body: formBody,
+      const response = await api.post("/users/login", {
+        username: id,
+        password: pw
       });
 
       const result = await response.json();
