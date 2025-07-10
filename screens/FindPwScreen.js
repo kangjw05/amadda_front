@@ -284,7 +284,10 @@ const FindPwScreen = () => {
                 alert("비밀번호가 일치하지 않습니다.");
                 return;
               }
-
+              if (password.length < 6) {
+                alert("비밀번호가 너무 짧습니다. 6자 이상으로 입력해주세요.");
+                return;
+              }
               try {
                 const res = await api.post(
                   `${API_BASE_URL}/users/change_pass`,
