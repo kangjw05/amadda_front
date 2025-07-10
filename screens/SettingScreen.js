@@ -40,6 +40,10 @@ const SettingScreen = () => {
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [editingColorKey, setEditingColorKey] = useState("category1");
 
+  useEffect(() => {
+    loadCategoriesList();
+  }, []);
+
   const saveCategoriesList = async (data) => {
     try {
       await AsyncStorage.setItem("categoriesList", JSON.stringify(data));
@@ -134,6 +138,38 @@ const SettingScreen = () => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsCategoryModalVisible(false);
+    try {
+      const accessToken = await SecureStore.getItemAsync("accessToken");
+
+      // colorKey에서 숫자 추출 (예: "category3" → "3")
+      const colorIndex = selectedColorKey.replace("category", "");
+
+      const payload = {
+        category: `${newCategory.name}-${colorIndex}`,
+      };
+
+      const response = await fetch(
+        "http://ser.iptime.org:8000/plan/push_category",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const result = await response.text();
+      if (!response.ok) {
+        Alert.alert("서버 오류", result || "카테고리 추가 실패");
+      } else {
+        console.log("카테고리 서버 등록 완료:", result);
+      }
+    } catch (error) {
+      console.error("카테고리 서버 등록 실패:", error);
+      Alert.alert("오류", "카테고리를 서버에 전송하지 못했습니다.");
+    }
   };
 
   const saveEditedCategory = async () => {
@@ -156,7 +192,6 @@ const SettingScreen = () => {
   };
 
   const deleteCategory = async () => {
-    // id가 1이면(기타 카테고리) 삭제 막기
     if (editingCategory.id === 1) {
       Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
       return;
@@ -168,6 +203,59 @@ const SettingScreen = () => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
+
+    // 🔽 서버로 삭제 요청
+    try {
+      const accessToken = await SecureStore.getItemAsync("accessToken");
+      const colorIndex = editingCategory.colorKey.replace("category", ""); // "category3" -> "3"
+
+      const payload = {
+        category: `${editingCategory.name}-${colorIndex}`,
+      };
+
+      console.log("삭제 요청 payload:", payload);
+
+      const response = await fetch(
+        "http://ser.iptime.org:8000/plan/del_category",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const contentType = response.headers.get("Content-Type");
+      let result;
+      if (contentType && contentType.includes("application/json")) {
+        result = await response.json();
+      } else {
+        result = await response.text();
+      }
+
+      console.log("서버 응답 상태:", response.status);
+      console.log("삭제 응답 내용:", result);
+
+      if (!response.ok) {
+        Alert.alert("서버 오류", result?.detail || "카테고리 삭제 실패");
+      }
+    } catch (error) {
+      console.error("카테고리 서버 삭제 실패:", error);
+      Alert.alert("오류", "카테고리를 서버에서 삭제하지 못했습니다.");
+    }
+  };
+
+  const loadCategoriesList = async () => {
+    try {
+      const storedList = await AsyncStorage.getItem("categoriesList");
+      if (storedList) {
+        setCategoriesList(JSON.parse(storedList));
+      }
+    } catch (error) {
+      console.error("categoriesList 불러오기 실패:", error);
+    }
   };
 
   const logout = async () => {
