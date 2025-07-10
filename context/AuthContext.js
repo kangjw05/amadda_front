@@ -1,69 +1,50 @@
 import React, { createContext, useState, useEffect } from "react";
+import api from "../api"; // axios 인스턴스
 import * as SecureStore from "expo-secure-store";
-
-import { API_BASE_URL } from "@env";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [userInfo, setUserInfo] = useState(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // 앱 시작 시 userInfo 복구
   useEffect(() => {
-    const restoreUserInfo = async () => {
-      const token = await SecureStore.getItemAsync("accessToken");
-      if (token) {
+    const checkLoginStatus = async () => {
+      const refreshToken = await SecureStore.getItemAsync("refreshToken");
+      if (refreshToken) {
         try {
-          let res = await fetch(`${API_BASE_URL}/users/info`, {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          });
-          if (res.status === 401) {
-            // 토큰 만료 시 refresh
-            const refreshRes = await fetch(
-              `${API_BASE_URL}/users/refresh`,
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                credentials: "include",
-              }
-            );
-            const refreshData = await refreshRes.json();
-            if (refreshRes.ok) {
-              await SecureStore.setItemAsync("accessToken", refreshData.access_token);
-              res = await fetch(`${API_BASE_URL}/users/info`, {
-                headers: {
-                  Authorization: `Bearer ${refreshData.access_token}`,
-                  "Content-Type": "application/json",
-                },
-              });
-            }
-          }
-          if (res.ok) {
-            const data = await res.json();
-            setUserInfo(data);
-            console.log("앱 시작 시 userInfo 복구 성공:", data);
-          } else {
-            console.log("앱 시작 시 userInfo 불러오기 실패");
-          }
-        } catch (e) {
-          console.error("유저정보 복구 실패:", e);
+          const res = await api.post("/users/refresh_token", {}, { withCredentials: true });
+          const newAccessToken = res.data.access_token;
+          await SecureStore.setItemAsync("accessToken", newAccessToken);
+
+          // 유저 정보도 복구
+          const infoRes = await api.get("/users/info");
+          setUserInfo(infoRes.data);
+
+          setIsLoggedIn(true);
+          console.log("앱 시작 시 토큰 갱신 및 유저정보 복구 성공");
+        } catch (err) {
+          console.error("토큰 갱신 실패:", err);
+          await SecureStore.deleteItemAsync("accessToken");
+          await SecureStore.deleteItemAsync("refreshToken");
+          setIsLoggedIn(false);
+          setUserInfo(null);
         }
+      } else {
+        console.log("refresh_token 없음");
+        setIsLoggedIn(false);
       }
       setLoading(false);
     };
 
-    restoreUserInfo();
+    checkLoginStatus();
   }, []);
 
-  // 로딩 중이면 null
   if (loading) return null;
 
   return (
-    <AuthContext.Provider value={{ userInfo, setUserInfo }}>
+    <AuthContext.Provider value={{ userInfo, setUserInfo, isLoggedIn, setIsLoggedIn }}>
       {children}
     </AuthContext.Provider>
   );
