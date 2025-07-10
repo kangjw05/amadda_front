@@ -59,6 +59,7 @@ const SettingScreen = () => {
 
     if (trimmedName === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
+      setIsEditingAccount(false);
       return;
     }
 
@@ -75,8 +76,14 @@ const SettingScreen = () => {
       // 성공 처리
       setIsEditingAccount(false);
 
-      Alert.alert("변경 완료", "이름이 성공적으로 변경되었습니다.");
-      setUserInfo({ ...userInfo, name: trimmedName });
+      Alert.alert("변경 완료", "이름이 변경되었습니다.");
+      try {
+        const userResponse = await api.get("/users/info");
+        setUserInfo(userResponse.data);
+        console.log("유저 정보 갱신:", userResponse.data);
+      } catch (fetchError) {
+        console.error("유저 정보 재조회 실패:", fetchError);
+      }
     } catch (error) {
       if (error.response) {
         console.error("서버 응답 오류:", error.response.data);
@@ -139,7 +146,14 @@ const SettingScreen = () => {
       console.log("카테고리 서버 등록 응답:", response);
 
       // 성공 처리
-      Alert.alert("성공", "카테고리가 서버에 등록되었습니다.");
+      Alert.alert("성공", "카테고리가 등록되었습니다.");
+      try {
+        const userResponse = await api.get("/users/info");
+        setUserInfo(userResponse.data);
+        console.log("유저 정보 갱신:", userResponse.data);
+      } catch (fetchError) {
+        console.error("유저 정보 재조회 실패:", fetchError);
+      }
     } catch (error) {
       if (error.response) {
         console.error("카테고리 서버 등록 실패:", error.response.data);
@@ -154,12 +168,21 @@ const SettingScreen = () => {
     }
   };
 
-
   const saveEditedCategory = async () => {
     if (editingCategoryName.trim() === "") {
       Alert.alert("카테고리 이름 입력", "카테고리 이름을 입력해주세요.");
       return;
     }
+
+    // 기존 카테고리 이름-번호
+    const oldColorIndex = editingCategory.colorKey.replace("category", ""); // 예: "category3" -> "3"
+    const oldCategoryString = `${editingCategory.name}-${oldColorIndex}`;
+
+    // 새로운 카테고리 이름-번호
+    const newColorIndex = editingColorKey.replace("category", "");
+    const newCategoryString = `${editingCategoryName.trim()}-${newColorIndex}`;
+
+    // 로컬 상태 업데이트
     const newList = categoriesList.map((cat) =>
       cat.id === editingCategory.id
         ? {
@@ -172,10 +195,39 @@ const SettingScreen = () => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
+
+    // 서버 요청
+    try {
+      const response = await api.post("/plan/change_category", {
+        category: oldCategoryString,
+        new_category: newCategoryString,
+      });
+
+      console.log("카테고리 수정 서버 응답:", response);
+      Alert.alert("변경 완료", "카테고리가 수정되었습니다.");
+      try {
+        const userResponse = await api.get("/users/info");
+        setUserInfo(userResponse.data);
+        console.log("유저 정보 갱신:", userResponse.data);
+      } catch (fetchError) {
+        console.error("유저 정보 재조회 실패:", fetchError);
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error("카테고리 수정 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 수정 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
+    }
   };
 
   const deleteCategory = async () => {
-    if (editingCategory.id === 1 || editingCategory.id === 2) {
+    if (editingCategory.id <= 3) {
       Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
       return;
     }
@@ -188,20 +240,27 @@ const SettingScreen = () => {
     setIsEditCategoryModalVisible(false);
 
     try {
-      const colorIndex = editingCategory.colorKey.replace("category", ""); // "category3" -> "3"
-
+      const colorIndex = editingCategory.colorKey.replace("category", "");
       const payload = {
         category: `${editingCategory.name}-${colorIndex}`,
       };
 
       console.log("삭제 요청 payload:", payload);
 
-      // axios 요청
       const response = await api.post("/plan/del_category", payload);
 
       console.log("삭제 서버 응답:", response);
 
-      Alert.alert("삭제 완료", "카테고리가 서버에서 삭제되었습니다.");
+      // 서버에서 유저 정보 다시 가져오기
+      try {
+        const userResponse = await api.get("/users/info");
+        setUserInfo(userResponse.data);
+        console.log("유저 정보 갱신:", userResponse.data);
+      } catch (fetchError) {
+        console.error("유저 정보 재조회 실패:", fetchError);
+      }
+
+      Alert.alert("삭제 완료", "카테고리가 삭제되었습니다.");
     } catch (error) {
       if (error.response) {
         console.error("카테고리 서버 삭제 실패:", error.response.data);
@@ -218,9 +277,47 @@ const SettingScreen = () => {
 
   const loadCategoriesList = async () => {
     try {
-      const storedList = await AsyncStorage.getItem("categoriesList");
-      if (storedList) {
-        setCategoriesList(JSON.parse(storedList));
+      let loadedFromServer = false;
+
+      // 1. userInfo.categories가 있으면 서버 데이터 우선
+      if (userInfo?.categories && Array.isArray(userInfo.categories)) {
+        const parsed = userInfo.categories.map((item, index) => {
+          const [name, colorNumber] = item.split("-");
+          return {
+            id: index + 1,
+            name: name,
+            colorKey: `category${colorNumber}`,
+          };
+        });
+
+        setCategoriesList(parsed);
+        await saveCategoriesList(parsed);
+        loadedFromServer = true;
+        console.log("서버에서 카테고리 로드 완료:", parsed);
+      }
+
+      // 2. 서버 데이터가 없을 경우 AsyncStorage에서 불러오기
+      if (!loadedFromServer) {
+        const stored = await AsyncStorage.getItem("categoriesList");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              setCategoriesList(parsed);
+              console.log("AsyncStorage에서 카테고리 로드 완료:", parsed);
+            } else {
+              console.warn("categoriesList에 배열이 아닌 데이터:", parsed);
+              await AsyncStorage.removeItem("categoriesList");
+              console.log("깨진 데이터를 삭제했습니다.");
+            }
+          } catch (parseError) {
+            console.error("categoriesList JSON 파싱 실패:", parseError);
+            await AsyncStorage.removeItem("categoriesList");
+            console.log("깨진 데이터를 삭제했습니다.");
+          }
+        } else {
+          console.log("저장된 카테고리가 없습니다.");
+        }
       }
     } catch (error) {
       console.error("categoriesList 불러오기 실패:", error);
@@ -290,7 +387,12 @@ const SettingScreen = () => {
                   <Text style={styles.input}>{userInfo?.name}</Text>
                 )}
                 <TouchableOpacity
-                  onPress={() => setIsEditingAccount(!isEditingAccount)}
+                  onPress={() => 
+                    {
+                      setAccount("");
+                      setIsEditingAccount(!isEditingAccount);
+                    }
+                 }
                 >
                   <Image
                     source={require("../assets/images/pencilIcon.png")}
