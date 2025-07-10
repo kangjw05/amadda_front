@@ -56,48 +56,38 @@ const SettingScreen = () => {
   const saveAccount = async () => {
     const trimmedName = account.trim();
     console.log("✅ 최종 전송 name:", trimmedName);
-    console.log("📦 보내는 body:", JSON.stringify({ name: trimmedName }));
-    if (account.trim() === "") {
+
+    if (trimmedName === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
       return;
     }
 
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
-      console.log("내 accessToken:", accessToken);
+
+      // 요청
       const response = await api.post(
         "/users/change_name",
-        {
-          name: account
-        }
+        { name: trimmedName }
       );
 
-      let data = null;
-      let responseText = "";
-      const contentType = response.headers.get("Content-Type");
+      console.log("서버 응답:", response);
 
-      if (contentType && contentType.includes("application/json")) {
-        data = await response.json();
-      } else {
-        responseText = await response.text();
-      }
-
-      if (!response.ok) {
-        console.error("서버 응답 오류:", data || responseText);
-        Alert.alert(
-          "업데이트 실패",
-          (data && data.detail) || responseText || "이름을 변경할 수 없습니다."
-        );
-        return;
-      }
-
+      // 성공 처리
       setIsEditingAccount(false);
 
       Alert.alert("변경 완료", "이름이 성공적으로 변경되었습니다.");
-      setUserInfo({ ...userInfo, name: account.trim() });
+      setUserInfo({ ...userInfo, name: trimmedName });
     } catch (error) {
-      console.error("네트워크 오류:", error);
-      Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      if (error.response) {
+        console.error("서버 응답 오류:", error.response.data);
+        Alert.alert(
+          "업데이트 실패",
+          error.response.data?.detail || "이름 변경 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
     }
   };
 
@@ -136,28 +126,34 @@ const SettingScreen = () => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsCategoryModalVisible(false);
+
     try {
-      // colorKey에서 숫자 추출 (예: "category3" → "3")
+      // colorKey에서 숫자 추출
       const colorIndex = selectedColorKey.replace("category", "");
 
-      const response = await api.post(
-        "/plan/push_category",
-        {
-          category: `${newCategory.name}-${colorIndex}`
-        }
-      );
+      // 요청
+      const response = await api.post("/plan/push_category", {
+        category: `${newCategory.name}-${colorIndex}`,
+      });
 
-      const result = await response.text();
-      if (!response.ok) {
-        Alert.alert("서버 오류", result || "카테고리 추가 실패");
-      } else {
-        console.log("카테고리 서버 등록 완료:", result);
-      }
+      console.log("카테고리 서버 등록 응답:", response);
+
+      // 성공 처리
+      Alert.alert("성공", "카테고리가 서버에 등록되었습니다.");
     } catch (error) {
-      console.error("카테고리 서버 등록 실패:", error);
-      Alert.alert("오류", "카테고리를 서버에 전송하지 못했습니다.");
+      if (error.response) {
+        console.error("카테고리 서버 등록 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 추가 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "카테고리를 서버에 전송하지 못했습니다.");
+      }
     }
   };
+
 
   const saveEditedCategory = async () => {
     if (editingCategoryName.trim() === "") {
@@ -179,7 +175,7 @@ const SettingScreen = () => {
   };
 
   const deleteCategory = async () => {
-    if (editingCategory.id === 1) {
+    if (editingCategory.id === 1 || editingCategory.id === 2) {
       Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
       return;
     }
@@ -191,7 +187,6 @@ const SettingScreen = () => {
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
 
-    // 🔽 서버로 삭제 요청
     try {
       const colorIndex = editingCategory.colorKey.replace("category", ""); // "category3" -> "3"
 
@@ -201,30 +196,23 @@ const SettingScreen = () => {
 
       console.log("삭제 요청 payload:", payload);
 
-      const response = await api.post(
-        "/plan/del_category",
-        {
-          category: `${editingCategory.name}-${colorIndex}`,
-        }
-      );
+      // axios 요청
+      const response = await api.post("/plan/del_category", payload);
 
-      const contentType = response.headers.get("Content-Type");
-      let result;
-      if (contentType && contentType.includes("application/json")) {
-        result = await response.json();
-      } else {
-        result = await response.text();
-      }
+      console.log("삭제 서버 응답:", response);
 
-      console.log("서버 응답 상태:", response.status);
-      console.log("삭제 응답 내용:", result);
-
-      if (!response.ok) {
-        Alert.alert("서버 오류", result?.detail || "카테고리 삭제 실패");
-      }
+      Alert.alert("삭제 완료", "카테고리가 서버에서 삭제되었습니다.");
     } catch (error) {
-      console.error("카테고리 서버 삭제 실패:", error);
-      Alert.alert("오류", "카테고리를 서버에서 삭제하지 못했습니다.");
+      if (error.response) {
+        console.error("카테고리 서버 삭제 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 삭제 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "카테고리를 서버에서 삭제하지 못했습니다.");
+      }
     }
   };
 
@@ -243,20 +231,25 @@ const SettingScreen = () => {
     try {
       const response = await api.post("/users/expire_token");
 
-      const responseText = await response.text();
-      console.log("로그아웃 응답:", response.status, responseText);
+      console.log("로그아웃 응답:", response);
 
       // regardless of result, clear tokens
       await SecureStore.deleteItemAsync("accessToken");
       await SecureStore.deleteItemAsync("refreshToken");
       setIsLoggedIn(false);
 
-      if (!response.ok) {
-        Alert.alert("로그아웃 실패", responseText || "다시 시도해주세요.");
-      }
+      Alert.alert("로그아웃 완료", "정상적으로 로그아웃 되었습니다.");
     } catch (error) {
-      console.error("로그아웃 네트워크 오류:", error);
-      Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      if (error.response) {
+        console.error("로그아웃 서버 오류:", error.response.data);
+        Alert.alert(
+          "로그아웃 실패",
+          error.response.data?.detail || "다시 시도해주세요."
+        );
+      } else {
+        console.error("로그아웃 네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
     }
   };
 
