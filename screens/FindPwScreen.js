@@ -92,7 +92,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
-              maxLength={20}
+              maxLength={45}
             />
           </ImageBackground>
           <TouchableOpacity
