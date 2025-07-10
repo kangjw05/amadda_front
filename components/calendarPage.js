@@ -73,13 +73,24 @@ const CalendarPage = ({
     }
   };
 
-  const getCategoryColor = (categoryStr) => {
-    const categoryNum = categoryStr.split("-")[1];
-    const key = `category${categoryNum}`;
-
-    return (
-      categories[key] || { bg: "#C3DFF0", text: "#6488BB", checkbox: "#7EB4BC" }
-    );
+  const getTodoColor = (item) => {
+    const categoryNum = item.category.split("-")[1];
+    let key = "category1";
+    if (item.isGroup) {
+      key = `group${categoryNum}`;
+      return (
+        groups[key] || { bg: "#638A7E", text: "#DBF0E4", checkbox: "#324B25" }
+      );
+    } else {
+      key = `category${categoryNum}`;
+      return (
+        categories[key] || {
+          bg: "#C3DFF0",
+          text: "#6488BB",
+          checkbox: "#7EB4BC",
+        }
+      );
+    }
   };
 
   const renderCalendar = () => {
@@ -110,22 +121,21 @@ const CalendarPage = ({
                     key={index}
                     style={[
                       styles.todoContent,
-                      { backgroundColor: getCategoryColor(item.category).bg },
+                      { backgroundColor: getTodoColor(item).bg },
                     ]}
                   >
                     <View
                       style={[
                         styles.colorBar,
                         {
-                          backgroundColor: getCategoryColor(item.category)
-                            .checkbox,
+                          backgroundColor: getTodoColor(item).checkbox,
                         },
                       ]}
                     ></View>
                     <Text
                       style={[
                         styles.todoText,
-                        { color: getCategoryColor(item.category).text },
+                        { color: getTodoColor(item).text },
                       ]}
                       numberOfLines={1}
                       ellipsizeMode="clip"
@@ -215,7 +225,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   todoText: {
-    fontSize: 12,
+    fontSize: 10,
     marginLeft: 3,
   },
 });

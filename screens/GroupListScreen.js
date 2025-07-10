@@ -15,6 +15,7 @@ import * as Clipboard from "expo-clipboard";
 import Swipeable from "react-native-gesture-handler/Swipeable";
 import api from "../api";
 
+import * as SecureStore from "expo-secure-store";
 import styles from "../styles/GroupListScreenStyles";
 import Header from "../components/header";
 import { groups } from "../Colors";
@@ -48,9 +49,29 @@ const GroupListScreen = () => {
     setGroupPassword("");
   };
 
-  const handleCopyCode = () => {
-    Clipboard.setStringAsync(groupCode);
+  const ensureValidAccessToken = async () => {
+    try {
+      // 1. 유효성 검사
+      await api.get("/users/verify_token");
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        // 2. 만료됐으면 새로 발급
+        console.log("Access Token 만료, 새로 발급 요청");
+        try {
+          const refreshResponse = await api.post("users/refresh_token");
+          const newAccessToken = refreshResponse.data.accessToken;
+          await SecureStore.setItemAsync("accessToken", newAccessToken);
+          console.log("Access Token 재발급 완료");
+        } catch (refreshError) {
+          console.error("토큰 재발급 실패:", refreshError);
+          throw new Error("세션이 만료되었습니다. 다시 로그인해주세요.");
+        }
+      } else {
+        throw error;
+      }
+    }
   };
+
 
   const handleCreateGroup = async () => {
     if (groupName.trim() === "") {
@@ -102,27 +123,46 @@ const GroupListScreen = () => {
     }
 
     try {
-      const response = await api.post("/group/register", {
-        code: groupCode,
-        password: groupPassword,
-      });
+      const token = await SecureStore.getItemAsync("accessToken");
+      const response = await api.post(
+        "/group/register",
+        {
+          code: groupCode,
+          password: groupPassword,
+        },
+      );
 
-      const { exists, passwordMatch } = response.data;
-
-      if (!exists) {
-        Alert.alert("오류", "존재하지 않는 그룹 코드입니다.");
-        return;
-      }
-      if (!passwordMatch) {
-        Alert.alert("오류", "비밀번호가 일치하지 않습니다.");
-        return;
-      }
-
+      // 성공 처리
       await loadGroups();
       closeModal();
     } catch (error) {
       console.error("그룹 참가 실패:", error);
-      Alert.alert("에러", "그룹 참가에 실패했습니다.");
+
+      if (error.response) {
+        const status = error.response.status;
+        const detail = error.response.data?.detail || "";
+
+        if (status === 404) {
+          Alert.alert("오류", "존재하지 않는 그룹 코드입니다.");
+          return;
+        }
+        if (status === 401 && error.includes("비밀번호")) {
+          Alert.alert("오류", "비밀번호가 일치하지 않습니다.");
+          return;
+        }
+        if (status === 401 && detail.includes("이미")) {
+          Alert.alert("오류", "이미 그룹에 참가해 있습니다.");
+          return;
+        }
+
+        Alert.alert("에러", "그룹 참가에 실패했습니다.");
+      } else if (error.request) {
+        console.error("요청은 갔는데 응답이 없음:", error.request);
+        Alert.alert("네트워크 에러", "서버로부터 응답이 없습니다.");
+      } else {
+        console.error("Axios 설정 중 문제:", error.message);
+        Alert.alert("에러", "요청을 보내는 중 오류가 발생했습니다.");
+      }
     }
   };
 
@@ -130,6 +170,11 @@ const GroupListScreen = () => {
     try {
       const infoResponse = await api.get("/users/info");
       const myGroupCodes = infoResponse.data.groups || [];
+
+      if (myGroupCodes.length === 0) {
+        setGroupList([]);
+        return;
+      }
 
       const detailedGroups = await Promise.all(
         myGroupCodes.map(async (g) => {
@@ -140,21 +185,20 @@ const GroupListScreen = () => {
 
           return {
             name: groupData.name,
-            creator: groupData.creator,
-            code: groupData.code,
+            creator: groupData.created_at,
+            code: groupData.code || g.code,
             colorKey: groupData.group_color
           };
         })
       );
 
-      // 3) 최종 리스트 저장
       setGroupList(detailedGroups);
     } catch (error) {
-      console.log("✅ infoResponse.data:", infoResponse.data);
-      console.error("그룹 리스트 불러오기 실패:", error);
+      console.error("그룹 리스트 불러오기 실패:", error.response?.data || error.message);
       Alert.alert("에러", "그룹 리스트를 불러오지 못했습니다.");
     }
   };
+
 
   const renderRightActions = (group) => {
     return (
@@ -168,85 +212,104 @@ const GroupListScreen = () => {
   };
 
   const handleLeaveGroup = async (group) => {
-    const currentUser = userInfo?.username;
+    try {
+      // 1. 유효성 검사 + 토큰 재발급
+      await ensureValidAccessToken();
 
-    if (group.creator === currentUser) {
-      // 그룹 생성자인 경우 그룹 삭제 로직
-      Alert.alert(
-        "그룹 삭제",
-        `"${group.name}" 그룹의 생성자입니다.\n이 그룹을 삭제하려면 확인 버튼을 누르세요.`,
-        [
-          { text: "취소", style: "cancel" },
-          {
-            text: "확인",
-            style: "destructive",
-            onPress: () => {
-              Alert.prompt(
-                "그룹 이름 확인",
-                `그룹 이름을 정확히 입력하면 삭제됩니다.`,
-                [
-                  { text: "취소", style: "cancel" },
-                  {
-                    text: "삭제",
-                    style: "destructive",
-                    onPress: async (inputText) => {
-                      if (inputText.trim() !== group.name) {
-                        Alert.alert("오류", "입력한 이름이 그룹 이름과 일치하지 않습니다.");
-                        return;
-                      }
-                      try {
-                        const response = await api.post("/group/del_group", {
-                          code: group.code,
-                        });
-                        if (response.data.success) {
-                          await loadGroups();
-                          Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
-                        } else {
-                          Alert.alert("에러", "그룹 삭제에 실패했습니다.");
+      // 2. 최신 토큰 꺼내오기
+      const token = await SecureStore.getItemAsync("accessToken");
+
+      // 3. 권한 확인 요청
+      const authResponse = await api.get("/group/my_auth", {
+        params: { code: group.code },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const auth = authResponse.data;
+      console.log("권한 상태:", auth);
+      if (auth === 0) {
+        // 그룹 생성자인 경우 그룹 삭제 로직
+        Alert.alert(
+          "그룹 삭제",
+          `"${group.name}" 그룹의 생성자입니다.\n이 그룹을 삭제하려면 확인 버튼을 누르세요.`,
+          [
+            { text: "취소", style: "cancel" },
+            {
+              text: "확인",
+              style: "destructive",
+              onPress: () => {
+                Alert.prompt(
+                  "그룹 이름 확인",
+                  `그룹 이름을 정확히 입력하면 삭제됩니다.`,
+                  [
+                    { text: "취소", style: "cancel" },
+                    {
+                      text: "삭제",
+                      style: "destructive",
+                      onPress: async (inputText) => {
+                        if (inputText.trim() !== group.name) {
+                          Alert.alert("오류", "입력한 이름이 그룹 이름과 일치하지 않습니다.");
+                          return;
                         }
-                      } catch (error) {
-                        console.error("그룹 삭제 실패:", error.response.data);
-                        Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
-                      }
+                        try {
+                          const response = await api.post("/group/del_group", {
+                            code: group.code,
+                          });
+                          if (response.status === 200) {
+                            await loadGroups();
+                            Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
+                          } else {
+                            Alert.alert("에러", "그룹 삭제에 실패했습니다.");
+                          }
+                        } catch (error) {
+                          console.error("그룹 삭제 실패:", error.response.data);
+                          Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
+                        }
+                      },
                     },
-                  },
-                ],
-                "plain-text"
-              );
+                  ],
+                  "plain-text"
+                );
+              },
             },
-          },
-        ]
-      );
-    } else {
-      // 참여자인 경우 나가기
-      Alert.alert(
-        "그룹 나가기",
-        `"${group.name}" 그룹을 나가시겠습니까?`,
-        [
-          { text: "취소", style: "cancel" },
-          {
-            text: "나가기",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await api.post("/group/out_group", {
-                  code: group.code,
-                });
-                if (response.data.success) {
-                  await loadGroups();
-                  Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
-                } else {
-                  Alert.alert("에러", "그룹 나가기 실패");
-                }
-              } catch (error) {
-                console.error("그룹 나가기 실패:", error);
-                Alert.alert("에러", "그룹 나가기에 실패했습니다.");
-              }
-            },
-          },
-        ]
-      );
-    }
+          ]
+        );
+      } else {
+            // detail에 따라 판단 가능 (원하면 조건 추가 가능)
+          Alert.alert(
+            "그룹 나가기",
+            `"${group.name}" 그룹을 나가시겠습니까?`,
+            [
+              { text: "취소", style: "cancel" },
+              {
+                text: "나가기",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    const response = await api.post("/group/out_group", {
+                      code: group.code,
+                    });
+                    if (response.status === 200) {
+                      await loadGroups();
+                      Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
+                    } else {
+                      Alert.alert("에러", "그룹 나가기 실패");
+                    }
+                  } catch (error) {
+                    console.error("그룹 나가기 실패:", error.response.data);
+                    Alert.alert("에러", "그룹 나가기에 실패했습니다.");
+                  }
+                },
+              },
+            ]
+          );
+      }
+    } catch(error) {
+    // 여기로 들어오면 권한이 없다는 뜻임
+    console.error("권한 확인 실패:", error.response?.data || error.message);
+  }
   };
 
   return (
@@ -264,7 +327,7 @@ const GroupListScreen = () => {
                 value={searchText}
                 onChangeText={setSearchText}
                 style={styles.searchInput}
-                maxLength={16}
+                maxLength={9}
               />
             </View>
           )}
@@ -335,7 +398,7 @@ const GroupListScreen = () => {
                   value={groupName}
                   onChangeText={setGroupName}
                   style={styles.input}
-                  maxLength={20}
+                  maxLength={10}
                 />
                 </ImageBackground>
                 </View>
@@ -350,7 +413,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
-                  maxLength={20}
+                  maxLength={10}
                 />
                 </ImageBackground>
                 </View>
@@ -408,7 +471,7 @@ const GroupListScreen = () => {
                   value={groupPassword}
                   onChangeText={setGroupPassword}
                   style={styles.input}
-                  maxLength={20}
+                  maxLength={10}
                 />
                 </ImageBackground>
                 </View>
@@ -442,11 +505,6 @@ const GroupListScreen = () => {
               <View 
                 style={[styles.groupIconContainer, 
                 { backgroundColor: colorTheme.checkbox }]}>
-                <Image
-                  source={require("../assets/images/groupIcon.png")} 
-                  style={styles.groupIcon}
-                  resizeMode="contain"
-                />
                   <Image
                     source={require("../assets/images/groupIcon.png")}
                     style={styles.groupIcon}

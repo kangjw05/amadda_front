@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { useNavigation } from "@react-navigation/native";
 import {
   Image,
@@ -7,22 +7,23 @@ import {
   TextInput,
   TouchableOpacity,
   ImageBackground,
+  ScrollView,
   Alert,
 } from "react-native";
-import styles from "../styles/SignUpScreenStyles";
-import api from "../api";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import api from "../api";
+import { API_BASE_URL } from "@env";
+import * as SecureStore from "expo-secure-store";
 
-const SignUpScreen = () => {
-  const navigation = useNavigation();
+import styles from "../styles/DeluserScreenStyles";
+import { AuthContext } from "../context/AuthContext";
+
+const DeluserScreen = () => {
+  const { setIsLoggedIn } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [isEmailSended, setIsEmailSended] = useState(false);
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
   useEffect(() => {
     let timerId;
 
@@ -33,7 +34,8 @@ const SignUpScreen = () => {
       try {
         const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        });
+          },
+        );
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
@@ -59,16 +61,72 @@ const SignUpScreen = () => {
     };
   }, []);
 
+  const deluser = async () => {
+    if (!codeVerified) {
+      Alert.alert(
+        "탈퇴 실패",
+        "이메일 인증을 진행해주세요"
+      )
+    } else {
+      Alert.alert(
+        "앱 탈퇴",
+        "정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+        [
+          {
+            text: "취소",
+            style: "cancel",
+          },
+          {
+            text: "확인",
+            style: "destructive",
+            onPress: async () => {
+              try {
+
+                const response = await api.post("/users/del_user");
+                console.log("앱 탈퇴 응답:", response.status, response.data);
+
+                if (response.status === 200){
+                // regardless of result, clear tokens
+                await SecureStore.deleteItemAsync("accessToken");
+                await SecureStore.deleteItemAsync("refreshToken");
+                Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다.");
+                setIsLoggedIn(false); // 로그인 상태 해제
+                } else {
+                  Alert.alert("탈퇴 실패", response.data|| "다시 시도해주세요.");
+                  return;
+                }
+                // navigation.reset({
+                //   index: 0,
+                //   routes: [{ name: "LoginScreen" }], // LoginScreen으로 이동
+                // });
+              } catch (error) {
+                if (error.response?.status === 409) {
+                  alert("이메일 인증을 다시 시도해주세요.")
+                  setIsEmailSended(false);
+                } else {
+                  console.error("서버 응답 상태:", err.response?.status);
+                  console.error("서버 응답 데이터:", err.response?.data);
+                  alert("비밀번호 변경 중 오류가 발생했습니다.\n다시 시도해주세요.");
+                  setIsEmailSended(false);
+                }
+              }
+            },
+          },
+        ]
+      );
+    }
+  };
+
   return (
-    <View style={styles.mainContainer}>
-      {/* 로고 */}
+    <ScrollView contentContainerStyle={styles.changePWmainContainer}>
+      {/* 로고
       <View style={styles.logoContainer}>
         <Image
-          source={require("../assets/Tab/Logo.png")}
-          style={styles.logoImage}
+          source={require("../assets/images/Lock.png")}
+          style={styles.lockLogoImage}
         />
-        <Text style={styles.logoText}>Amadda</Text>
-      </View>
+        <Text style={styles.logoText}>비밀번호 변경</Text>
+      </View> */}
 
       {/* 입력 영역 */}
       <View style={styles.inputsWrapper}>
@@ -88,7 +146,7 @@ const SignUpScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
-              maxLength={20}
+              maxLength={45}
               editable={!isEmailSended}
             />
           </ImageBackground>
@@ -100,9 +158,13 @@ const SignUpScreen = () => {
                 return;
               }
               try {
-                const res = await api.post(
-                  "/email/request",
-                  { email },
+                const res = await api.post("/email/user_request", 
+                  {
+                    email: email
+                  },
+                  {
+                    headers: { "Authorization": undefined }
+                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -120,6 +182,8 @@ const SignUpScreen = () => {
               } catch (err) {
                 if (err.response?.status === 422) {
                   alert("잘못된 이메일 형식입니다.");
+                } else if (err.response?.status === 405) {
+                  alert("이메일을 다시 확인해주세요.");
                 } else {
                   console.error("서버 응답 상태:", err.response?.status);
                   console.error("서버 응답 데이터:", err.response?.data);
@@ -199,136 +263,15 @@ const SignUpScreen = () => {
           )}
         </View>
 
-        {/* 계정 이름 */}
-        <View style={styles.inputRow}>
-          <Image
-            source={require("../assets/images/personIcon.png")}
-            style={styles.personIcon}
-          />
-          <ImageBackground
-            source={require("../assets/images/nameInput.png")}
-            style={styles.inputBackground}
-            imageStyle={styles.inputBackgroundImage}
-          >
-            <TextInput
-              placeholder="계정 이름"
-              style={styles.textInput}
-              value={username}
-              onChangeText={setUsername}
-              maxLength={9}
-            />
-          </ImageBackground>
-        </View>
-
-        {/* 비밀번호 */}
-        <View style={styles.inputRow}>
-          <Image
-            source={require("../assets/images/Lock.png")}
-            style={styles.lockIcon}
-          />
-          <ImageBackground
-            source={require("../assets/images/PWInput.png")}
-            style={styles.inputBackground}
-            imageStyle={styles.inputBackgroundImage}
-          >
-            <TextInput
-              placeholder="비밀번호"
-              secureTextEntry
-              style={styles.textInput}
-              value={password}
-              onChangeText={setPassword}
-              maxLength={16}
-            />
-          </ImageBackground>
-        </View>
-
-        {/* 비밀번호 확인 */}
-        <View style={styles.inputRow}>
-          <Image
-            source={require("../assets/images/Lock.png")}
-            style={styles.lockIcon}
-          />
-          <ImageBackground
-            source={require("../assets/images/codeInput.png")}
-            style={styles.inputBackground}
-            imageStyle={styles.inputBackgroundImage}
-          >
-            <TextInput
-              placeholder="비밀번호 확인"
-              secureTextEntry
-              style={styles.textInput}
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              maxLength={16}
-            />
-          </ImageBackground>
-          <Image
-            source={
-              confirmPassword !== "" &&
-              password !== "" &&
-              password === confirmPassword
-                ? require("../assets/images/checkBoxIcon.png")
-                : require("../assets/images/checkBoxOutlineIcon.png")
-            }
-            style={styles.inputIconRight}
-          />
-        </View>
-        {/* 회원가입 버튼 */}
         <View style={styles.buttonPart}>
-          <TouchableOpacity
-            style={styles.joinButton}
-            onPress={async () => {
-              if (!email || !username || !password || !confirmPassword) {
-                alert("모든 항목을 입력해주세요.");
-                return;
-              }
-              if (password !== confirmPassword) {
-                alert("비밀번호가 일치하지 않습니다.");
-                return;
-              }
-              if (!codeVerified) {
-                alert("이메일 인증을 완료해주세요.");
-                return;
-              }
-              if (password.length < 6) {
-                alert("비밀번호가 너무 짧습니다.\n6자 이상으로 입력해주세요.");
-                return;
-              }
-              try {
-                const res = await api.post(
-                  "/users/register",
-                  {
-                    name: username,
-                    email,
-                    password,
-                  },
-                );
-                Alert.alert("회원가입 성공", "회원가입이 완료되었습니다.", {
-                  cancelable: false,
-                });
-                navigation.navigate("LoginScreen");
-              } catch (err) {
-                console.error(err);
-                alert("서버 오류가 발생했습니다.");
-              }
-            }}
-          >
-            <Text style={styles.joinButtonText}>회원가입</Text>
+          {/* 회원가입 버튼 */}
+          <TouchableOpacity style={styles.delButton} onPress={deluser}>
+            <Text style={styles.joinButtonText}>탈퇴</Text>
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* 하단 링크 */}
-      <View style={styles.footerLinks}>
-        <TouchableOpacity onPress={() => navigation.navigate("FindPw")}>
-          <Text style={styles.footerLinkText}>비밀번호를 잊으셨나요?</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate("LoginScreen")}>
-          <Text style={styles.footerLinkText}>로그인</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
+    </ScrollView>
   );
 };
 
-export default SignUpScreen;
+export default DeluserScreen;

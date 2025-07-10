@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useContext} from "react";
+import React, { useState, useEffect, useContext } from "react";
 import { StatusBar } from "expo-status-bar";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import {
@@ -21,10 +21,11 @@ import styles from "../styles/SettingScreenStyles";
 import Header from "../components/header";
 import LoginScreen from "./LoginScreen";
 import { AuthContext } from "../context/AuthContext";
+import api from "../api";
 
-const SettingScreen = ({ setIsLoggedIn }) => {
+const SettingScreen = () => {
   const navigation = useNavigation();
-  const {userInfo} = useContext(AuthContext);
+  const { userInfo, setUserInfo, setIsLoggedIn } = useContext(AuthContext);
 
   const [account, setAccount] = useState("");
 
@@ -40,6 +41,40 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   const [editingCategoryName, setEditingCategoryName] = useState("");
   const [editingColorKey, setEditingColorKey] = useState("category1");
 
+  useEffect(() => {
+    loadCategoriesList();
+  }, []);
+
+  const updateCategoriesFromServer = async () => {
+    try {
+      const userResponse = await api.get("/users/info");
+      setUserInfo(userResponse.data);
+      if (userResponse.data?.categories) {
+        const parsed = userResponse.data.categories.map((item) => {
+          const [name, colorNumber] = item.split("-");
+          const colorKey = `category${colorNumber}`;
+          const existing = categoriesList.find(
+            (c) => c.name === name && c.colorKey === colorKey
+          );
+          // 기존에 있으면 id 유지, 없으면 새 id 부여
+          const maxId = categoriesList.reduce(
+            (max, c) => (c.id > max ? c.id : max),
+            0
+          );
+          return {
+            id: existing ? existing.id : maxId + 1,
+            name,
+            colorKey,
+          };
+        });
+        setCategoriesList(parsed);
+        await saveCategoriesList(parsed);
+      }
+    } catch (err) {
+      console.error("유저 정보 갱신 실패:", err);
+    }
+  };
+
   const saveCategoriesList = async (data) => {
     try {
       await AsyncStorage.setItem("categoriesList", JSON.stringify(data));
@@ -49,11 +84,48 @@ const SettingScreen = ({ setIsLoggedIn }) => {
   };
 
   const saveAccount = async () => {
-    if (account === "") {
+    const trimmedName = account.trim();
+    console.log("✅ 최종 전송 name:", trimmedName);
+
+    if (trimmedName === "") {
       Alert.alert("이름 입력 오류", "이름을 입력해주세요.");
+      setIsEditingAccount(false);
       return;
     }
-    setIsEditingAccount(false);
+
+    try {
+
+      // 요청
+      const response = await api.post(
+        "/users/change_name",
+        { name: trimmedName }
+      );
+
+      console.log("서버 응답:", response);
+
+      // 성공 처리
+      setIsEditingAccount(false);
+
+      Alert.alert("변경 완료", "이름이 변경되었습니다.");
+      try {
+        const userResponse = await api.get("/users/info");
+        setUserInfo(userResponse.data);
+        console.log("유저 정보 갱신:", userResponse.data);
+      } catch (fetchError) {
+        console.error("유저 정보 재조회 실패:", fetchError);
+      }
+    } catch (error) {
+      if (error.response) {
+        console.error("서버 응답 오류:", error.response.data);
+        Alert.alert(
+          "업데이트 실패",
+          error.response.data?.detail || "이름 변경 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
+    }
   };
 
   const [categoriesList, setCategoriesList] = useState([
@@ -78,10 +150,11 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     if (newCategoryName.trim() === "") {
       return;
     }
-    const newId =
-      categoriesList.length > 0
-        ? categoriesList[categoriesList.length - 1].id + 1
-        : 1;
+    const maxId = categoriesList.reduce(
+      (max, c) => (c.id > max ? c.id : max),
+      0
+    );
+    const newId = maxId + 1;
     const newCategory = {
       id: newId,
       name: newCategoryName.trim(),
@@ -91,6 +164,31 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsCategoryModalVisible(false);
+
+    try {
+      const colorIndex = selectedColorKey.replace("category", "");
+      const response = await api.post("/plan/push_category", {
+        category: `${newCategory.name}-${colorIndex}`,
+      });
+
+      console.log("카테고리 서버 등록 응답:", response);
+
+      Alert.alert("성공", "카테고리가 등록되었습니다.");
+
+      await updateCategoriesFromServer();
+
+    } catch (error) {
+      if (error.response) {
+        console.error("카테고리 서버 등록 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 추가 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "카테고리를 서버에 전송하지 못했습니다.");
+      }
+    }
   };
 
   const saveEditedCategory = async () => {
@@ -98,6 +196,13 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       Alert.alert("카테고리 이름 입력", "카테고리 이름을 입력해주세요.");
       return;
     }
+
+    const oldColorIndex = editingCategory.colorKey.replace("category", "");
+    const oldCategoryString = `${editingCategory.name}-${oldColorIndex}`;
+
+    const newColorIndex = editingColorKey.replace("category", "");
+    const newCategoryString = `${editingCategoryName.trim()}-${newColorIndex}`;
+
     const newList = categoriesList.map((cat) =>
       cat.id === editingCategory.id
         ? {
@@ -110,11 +215,33 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
+
+    try {
+      const response = await api.post("/plan/change_category", {
+        category: oldCategoryString,
+        new_category: newCategoryString,
+      });
+
+      console.log("카테고리 수정 서버 응답:", response);
+      Alert.alert("변경 완료", "카테고리가 수정되었습니다.");
+
+      await updateCategoriesFromServer();
+    } catch (error) {
+      if (error.response) {
+        console.error("카테고리 수정 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 수정 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
+    }
   };
 
   const deleteCategory = async () => {
-    // id가 1이면(기타 카테고리) 삭제 막기
-    if (editingCategory.id === 1) {
+    if (editingCategory.id <= 3) {
       Alert.alert("삭제 불가", "기본 카테고리는 삭제할 수 없습니다.");
       return;
     }
@@ -125,39 +252,111 @@ const SettingScreen = ({ setIsLoggedIn }) => {
     setCategoriesList(newList);
     await saveCategoriesList(newList);
     setIsEditCategoryModalVisible(false);
+
+    try {
+      const colorIndex = editingCategory.colorKey.replace("category", "");
+      const payload = {
+        category: `${editingCategory.name}-${colorIndex}`,
+      };
+
+      console.log("삭제 요청 payload:", payload);
+
+      const response = await api.post("/plan/del_category", payload);
+
+      console.log("삭제 서버 응답:", response);
+
+      Alert.alert("삭제 완료", "카테고리가 삭제되었습니다.");
+
+      await updateCategoriesFromServer();
+    } catch (error) {
+      if (error.response) {
+        console.error("카테고리 서버 삭제 실패:", error.response.data);
+        Alert.alert(
+          "서버 오류",
+          error.response.data?.detail || "카테고리 삭제 실패"
+        );
+      } else {
+        console.error("네트워크 오류:", error);
+        Alert.alert("오류", "카테고리를 서버에서 삭제하지 못했습니다.");
+      }
+    }
+  };
+
+  const loadCategoriesList = async () => {
+    try {
+      let loadedFromServer = false;
+
+      // 1. userInfo.categories가 있으면 서버 데이터 우선
+      if (userInfo?.categories && Array.isArray(userInfo.categories)) {
+        const parsed = userInfo.categories.map((item, index) => {
+          const [name, colorNumber] = item.split("-");
+          return {
+            id: index + 1,
+            name: name,
+            colorKey: `category${colorNumber}`,
+          };
+        });
+
+        setCategoriesList(parsed);
+        await saveCategoriesList(parsed);
+        loadedFromServer = true;
+        console.log("서버에서 카테고리 로드 완료:", parsed);
+      }
+
+      // 2. 서버 데이터가 없을 경우 AsyncStorage에서 불러오기
+      if (!loadedFromServer) {
+        const stored = await AsyncStorage.getItem("categoriesList");
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (Array.isArray(parsed)) {
+              setCategoriesList(parsed);
+              console.log("AsyncStorage에서 카테고리 로드 완료:", parsed);
+            } else {
+              console.warn("categoriesList에 배열이 아닌 데이터:", parsed);
+              await AsyncStorage.removeItem("categoriesList");
+              console.log("깨진 데이터를 삭제했습니다.");
+            }
+          } catch (parseError) {
+            console.error("categoriesList JSON 파싱 실패:", parseError);
+            await AsyncStorage.removeItem("categoriesList");
+            console.log("깨진 데이터를 삭제했습니다.");
+          }
+        } else {
+          console.log("저장된 카테고리가 없습니다.");
+        }
+      }
+    } catch (error) {
+      console.error("categoriesList 불러오기 실패:", error);
+    }
   };
 
   const logout = async () => {
     try {
-      const accessToken = await SecureStore.getItemAsync("accessToken");
+      const response = await api.post("/users/expire_token");
 
-      const response = await fetch(
-        "http://ser.iptime.org:8000/users/expire_token",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-          credentials: "include",
-        }
-      );
-
-      const responseText = await response.text();
-      console.log("로그아웃 응답:", response.status, responseText);
+      console.log("로그아웃 응답:", response);
 
       // regardless of result, clear tokens
       await SecureStore.deleteItemAsync("accessToken");
       await SecureStore.deleteItemAsync("refreshToken");
       setIsLoggedIn(false);
 
-      if (!response.ok) {
-        Alert.alert("로그아웃 실패", responseText || "다시 시도해주세요.");
-      }
+      Alert.alert("로그아웃 완료", "정상적으로 로그아웃 되었습니다.");
     } catch (error) {
-      console.error("로그아웃 네트워크 오류:", error);
-      Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      if (error.response) {
+        console.error("로그아웃 서버 오류:", error.response.data);
+        Alert.alert(
+          "로그아웃 실패",
+          error.response.data?.detail || "다시 시도해주세요."
+        );
+      } else {
+        console.error("로그아웃 네트워크 오류:", error);
+        Alert.alert("오류", "서버에 연결할 수 없습니다.");
+      }
     }
   };
+
   return (
     <View style={styles.fullcontainer}>
       <View>
@@ -168,80 +367,90 @@ const SettingScreen = ({ setIsLoggedIn }) => {
       </View>
       <ScrollView
         style={{ flex: 1, backgroundColor: themeColors.bg }}
-        contentContainerStyle={{ paddingBottom: 20 }}>
-      <View style={styles.information}>
-        <View style={styles.leftpannel}>
-          <Image
-            source={require("../assets/images/userIcon.png")}
-            style={styles.icon}
-          />
-        </View>
-        <View style={styles.rightpannel}>
-          <View style={styles.inputRow}>
-            <Text style={styles.label}>계정</Text>
-            <View style={styles.inputContainer}>
-            {isEditingAccount ? (
-                <TextInput
-                  placeholder={userInfo?.name}
-                  value={account}
-                  onChangeText={setAccount}
-                  onBlur={saveAccount}
-                  autoFocus
-                  style={styles.input}
-                  maxLength={16}
-                />
-              ) : (
-                <Text style={styles.input}>{userInfo?.name}</Text>
-              )}
-            <TouchableOpacity onPress={() => setIsEditingAccount(!isEditingAccount)}>
-              <Image
-                source={require("../assets/images/pencilIcon.png")}
-                style={styles.icon}
-              />
-            </TouchableOpacity>
-            </View>
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
+        <View style={styles.information}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/userIcon.png")}
+              style={styles.icon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
-              <Text style={styles.label}>이메일</Text>
+              <Text style={styles.label}>계정</Text>
               <View style={styles.inputContainer}>
-                <Text style={styles.input}>{userInfo?.email}</Text>
+                {isEditingAccount ? (
+                  <TextInput
+                    placeholder={userInfo?.name}
+                    value={account}
+                    onChangeText={setAccount}
+                    onBlur={saveAccount}
+                    autoFocus
+                    style={styles.input}
+                    maxLength={9}
+                  />
+                ) : (
+                  <Text style={styles.input}>{userInfo?.name}</Text>
+                )}
+                <TouchableOpacity
+                  onPress={() => 
+                    {
+                      setAccount("");
+                      setIsEditingAccount(!isEditingAccount);
+                    }
+                 }
+                >
+                  <Image
+                    source={require("../assets/images/pencilIcon.png")}
+                    style={styles.icon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.inputRow}>
+                <Text style={styles.label}>이메일</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.input}>{userInfo?.email}</Text>
+                </View>
               </View>
             </View>
           </View>
         </View>
-      </View>
-      <View style={styles.information}>
-        <View style={styles.leftpannel}>
-          <Image
-            source={require("../assets/images/tagIcon.png")}
-            style={styles.icon}
-          />
-        </View>
-        <View style={styles.rightpannel}>
-          <View style={styles.inputRow}>
-            <View style={styles.labelContainer}>
-            <Text style={styles.categoryLabel}>카테고리</Text>
-            <TouchableOpacity 
-            onPress={openCategoryModal}
-            style={styles.addCategoryButton}>
-              <Image
-                source={require("../assets/images/addIcon.png")}
-                style={styles.addIcon} 
-              />
-            </TouchableOpacity>
-            </View>
-            <View style={styles.categoryContainer}>
-              <FlatList
-                data={categoriesList}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                    setEditingCategory(item);
-                    setEditingCategoryName(item.name);
-                    setEditingColorKey(item.colorKey);
-                    setIsEditCategoryModalVisible(true);
-                    }}
-                    style={styles.categoryItem}
-                  >
+        <View style={styles.information}>
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/tagIcon.png")}
+              style={styles.icon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <View style={styles.labelContainer}>
+                <Text style={styles.categoryLabel}>카테고리</Text>
+                <TouchableOpacity
+                  onPress={openCategoryModal}
+                  style={styles.addCategoryButton}
+                >
+                  <Image
+                    source={require("../assets/images/addIcon.png")}
+                    style={styles.addIcon}
+                  />
+                </TouchableOpacity>
+              </View>
+              <View style={styles.categoryContainer}>
+                <FlatList
+                  data={categoriesList}
+                  scrollEnabled={false}
+                  renderItem={({ item }) => (
+                    <TouchableOpacity
+                      onPress={() => {
+                        setEditingCategory(item);
+                        setEditingCategoryName(item.name);
+                        setEditingColorKey(item.colorKey);
+                        setIsEditCategoryModalVisible(true);
+                      }}
+                      style={styles.categoryItem}
+                    >
                       <Text style={styles.categoryText}>{item.name}</Text>
                       <View
                         style={[
@@ -278,7 +487,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     onChangeText={setNewCategoryName}
                     placeholder="카테고리 이름"
                     style={styles.categoryModalInput}
-                    maxLength={16}
+                    maxLength={9}
                   />
                   <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                   <View style={styles.colorGrid}>
@@ -346,7 +555,7 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     onChangeText={setEditingCategoryName}
                     placeholder="카테고리 이름"
                     style={styles.categoryModalInput}
-                    maxLength={16}
+                    maxLength={9}
                   />
                   <Text style={styles.categoryModalLabel}>카테고리 색상</Text>
                   <View style={styles.colorGrid}>
@@ -387,26 +596,47 @@ const SettingScreen = ({ setIsLoggedIn }) => {
                     </TouchableOpacity>
                   </View>
                 </View>
-                </TouchableWithoutFeedback>
-              </View>
-            </TouchableWithoutFeedback>
-          </Modal>
-          <TouchableOpacity 
+              </TouchableWithoutFeedback>
+            </View>
+          </TouchableWithoutFeedback>
+        </Modal>
+        <TouchableOpacity
           style={styles.information}
-          onPress={() => navigation.navigate("ChangePw")}>
-            <View style={styles.leftpannel}>
-              <Image
-                source={require("../assets/images/lockIcon.png")}
-                style={styles.lockIcon}
-              />
+          onPress={() => navigation.navigate("ChangePw")}
+        >
+          <View style={styles.leftpannel}>
+            <Image
+              source={require("../assets/images/lockIcon.png")}
+              style={styles.lockIcon}
+            />
+          </View>
+          <View style={styles.rightpannel}>
+            <View style={styles.inputRow}>
+              <Text style={styles.findPWFont}>비밀번호 변경</Text>
             </View>
-            <View style={styles.rightpannel}>
-              <View style={styles.inputRow}>
-                <Text style={styles.findPWFont}>비밀번호 변경</Text>
-            </View>
-            </View>
-          </TouchableOpacity>
-        <TouchableOpacity style={styles.information} onPress={logout}>
+          </View>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={styles.information}
+          onPress={() => {
+            Alert.alert(
+              "로그아웃",
+              "정말 로그아웃 하시겠습니까?",
+              [
+                {
+                  text: "취소",
+                  style: "cancel",
+                },
+                {
+                  text: "확인",
+                  style: "destructive",
+                  onPress: logout,
+                },
+              ],
+              { cancelable: true }
+            );
+          }}
+        >
           <View style={styles.leftpannel}>
             <Image
               source={require("../assets/images/logoutIcon.png")}
@@ -416,10 +646,13 @@ const SettingScreen = ({ setIsLoggedIn }) => {
           <View style={styles.rightpannel}>
             <View style={styles.inputRow}>
               <Text style={styles.outText}>로그아웃</Text>
-              </View>
             </View>
+          </View>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.information}>
+        <TouchableOpacity
+          style={styles.information}
+          onPress={() => navigation.navigate("Deluser")}
+        >
           <View style={styles.leftpannel}>
             <Image
               source={require("../assets/images/userXIcon.png")}

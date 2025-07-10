@@ -9,16 +9,18 @@ import {
   StyleSheet,
   RefreshControl,
 } from "react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 
 import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
 import CheckBox from "./checkbox";
+import AddTodoModal from "./AddTodoModal";
 
 const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const Calendar = ({ todoData }) => {
+const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -144,7 +146,7 @@ const Calendar = ({ todoData }) => {
         </View>
       );
     },
-    [selectedDate]
+    [selectedDate, todoData]
   );
 
   // FlatList 레퍼런스
@@ -169,6 +171,9 @@ const Calendar = ({ todoData }) => {
   // 페이징 이동용 현재 인덱스 정보
   const [currentIndex, setCurrentIndex] = useState(24 + today.getMonth());
 
+  // 모달 이벤트 감지
+  const [isAddTodoVisible, setIsAddTodoVisible] = useState(false);
+
   // 캘린더 컴포넌트 초기 상태로 새로고침 이벤트
   const [refreshing, setRefreshing] = useState(false);
   // 새로고침 함수
@@ -190,12 +195,38 @@ const Calendar = ({ todoData }) => {
     }, 300);
   };
 
-  const getCategoryColor = (categoryStr) => {
-    const categoryNum = categoryStr.split("-")[1];
-    const key = `category${categoryNum}`;
+  const getTodoColor = (item) => {
+    const categoryNum = item.category.split("-")[1];
+    let key = "category1";
+    if (item.isGroup) {
+      key = `group${categoryNum}`;
+      return (
+        groups[key] || { bg: "#638A7E", text: "#DBF0E4", checkbox: "#324B25" }
+      );
+    } else {
+      key = `category${categoryNum}`;
+      return (
+        categories[key] || {
+          bg: "#C3DFF0",
+          text: "#6488BB",
+          checkbox: "#7EB4BC",
+        }
+      );
+    }
+  };
 
+  // 삭제 핸들링
+  // 스와이프 삭제 렌더링
+  const renderRightActions = (item) => {
+    const handleDelete = () => {
+      onDeleteTodo(item.uuid, getSelectedDateFormat());
+    };
     return (
-      categories[key] || { bg: "#C3DFF0", text: "#6488BB", checkbox: "#7EB4BC" }
+      <TouchableOpacity onPress={handleDelete}>
+        <View style={styles.deleteButton}>
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </View>
+      </TouchableOpacity>
     );
   };
 
@@ -261,46 +292,59 @@ const Calendar = ({ todoData }) => {
           <Text style={styles.todoHeaderText}>
             {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일
           </Text>
-          <TouchableOpacity style={styles.todoAddBtn}>
+          <TouchableOpacity
+            style={styles.todoAddBtn}
+            onPress={() => setIsAddTodoVisible(true)}
+          >
             <Text style={styles.addBtnText}>+</Text>
           </TouchableOpacity>
         </View>
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
-          <View
-            key={index}
-            style={[
-              styles.todos,
-              { backgroundColor: getCategoryColor(item.category).bg },
-            ]}
-          >
-            <View style={{ width: "85%" }}>
-              <Text
+          <View key={item.uuid} style={styles.todoWrapper}>
+            <Swipeable renderRightActions={() => renderRightActions(item)}>
+              <View
                 style={[
-                  styles.todoCatText,
-                  { color: getCategoryColor(item.category).text },
+                  styles.todos,
+                  { backgroundColor: getTodoColor(item).bg },
                 ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
               >
-                {item.category.split("-")[0]}
-              </Text>
-              <Text
-                style={[
-                  styles.todoNameText,
-                  { color: getCategoryColor(item.category).text },
-                ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.name}
-              </Text>
-            </View>
-            <View>
-              <CheckBox color={getCategoryColor(item.category).checkbox} />
-            </View>
+                <View style={{ width: "85%" }}>
+                  <Text
+                    style={[
+                      styles.todoCatText,
+                      { color: getTodoColor(item).text },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.category.split("-")[0]}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.todoNameText,
+                      { color: getTodoColor(item).text },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.name}
+                  </Text>
+                </View>
+                <View>
+                  <CheckBox color={getTodoColor(item).checkbox} />
+                </View>
+              </View>
+            </Swipeable>
           </View>
         ))}
       </View>
+
+      <AddTodoModal
+        visible={isAddTodoVisible}
+        onClose={() => setIsAddTodoVisible(false)}
+        onAddTodo={onAddTodo}
+        selectedDate={selectedDate}
+      />
     </ScrollView>
   );
 };
@@ -389,25 +433,44 @@ const styles = StyleSheet.create({
   todoAddBtn: {},
   addBtnText: { color: themeColors.text, fontWeight: 600, fontSize: 27 },
 
-  todos: {
+  todoWrapper: {
     flex: 1,
+    width: "100%",
+    backgroundColor: "tomato",
+    overflow: "hidden",
+    borderRadius: 13,
+    marginTop: 21,
+    height: 77,
+  },
+  todos: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: 13,
-    marginTop: 21,
+    borderRadius: 13, // 넣을까 뺄까?
     paddingVertical: "5%",
     paddingHorizontal: "7%",
     width: "100%",
-    height: 77,
+    height: "100%",
   },
   todoNameText: {
-    fontSize: 21,
+    fontSize: 19,
     fontWeight: 500,
   },
   todoCatText: {
     fontSize: 13,
+  },
+  deleteButton: {
+    backgroundColor: "tomato",
+    justifyContent: "center",
+    alignItems: "flex-end",
+    paddingHorizontal: 21,
+    height: "100%",
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 17,
   },
 });
 
