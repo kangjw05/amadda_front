@@ -92,6 +92,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -156,6 +157,7 @@ const ChangePwScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -228,6 +230,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -249,6 +252,7 @@ const ChangePwScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
