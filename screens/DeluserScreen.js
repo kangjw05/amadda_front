@@ -134,6 +134,7 @@ const DeluserScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -151,7 +152,7 @@ const DeluserScreen = () => {
 
                 // 상태 코드가 200이면 성공 처리
                 if (res.status === 200) {
-                  alert("인증 메일이 발송되었습니다.");
+                  Alert.alert("메일 발송 완료", "인증 메일이 발송되었습니다.");
                   const sendTime = Date.now();
                   await AsyncStorage.multiSet([
                     ["emailSendTime", sendTime.toString()],
@@ -192,6 +193,7 @@ const DeluserScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -214,7 +216,7 @@ const DeluserScreen = () => {
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
-                    alert("인증이 완료되었습니다.");
+                    Alert.alert("인증 완료", "인증이 완료되었습니다.");
                   } else {
                     // 혹시 다른 2xx 상태가 있을 경우 대비
                     alert("예상치 못한 응답이 왔습니다.");

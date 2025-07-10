@@ -92,6 +92,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={email}
               onChangeText={setEmail}
+              maxLength={20}
             />
           </ImageBackground>
           <TouchableOpacity
@@ -156,6 +157,7 @@ const FindPwScreen = () => {
               value={code}
               onChangeText={setCode}
               editable={!codeVerified}
+              maxLength={6}
             />
           </ImageBackground>
           {codeVerified ? (
@@ -229,6 +231,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={password}
               onChangeText={setPassword}
+              maxLength={16}
             />
           </ImageBackground>
         </View>
@@ -250,6 +253,7 @@ const FindPwScreen = () => {
               style={styles.textInput}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
+              maxLength={16}
             />
           </ImageBackground>
           <Image
