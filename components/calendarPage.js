@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
     height: "100%",
   },
   todoText: {
-    fontSize: 12,
+    fontSize: 10,
     marginLeft: 3,
   },
 });

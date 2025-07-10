@@ -9,6 +9,7 @@ import {
   StyleSheet,
   RefreshControl,
 } from "react-native";
+import Swipeable from "react-native-gesture-handler/Swipeable";
 
 import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
@@ -210,6 +211,18 @@ const Calendar = ({ todoData = {} }) => {
     }
   };
 
+  const handleDelete = () => {};
+
+  const renderRightActions = () => {
+    return (
+      <TouchableOpacity onPress={handleDelete}>
+        <View style={styles.deleteButton}>
+          <Text style={styles.deleteButtonText}>삭제</Text>
+        </View>
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <ScrollView
       style={styles.bg}
@@ -277,32 +290,41 @@ const Calendar = ({ todoData = {} }) => {
           </TouchableOpacity>
         </View>
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
-          <View
-            key={index}
-            style={[styles.todos, { backgroundColor: getTodoColor(item).bg }]}
-          >
-            <View style={{ width: "85%" }}>
-              <Text
-                style={[styles.todoCatText, { color: getTodoColor(item).text }]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
-              >
-                {item.category.split("-")[0]}
-              </Text>
-              <Text
+          <View key={index} style={styles.todoWrapper}>
+            <Swipeable renderRightActions={() => renderRightActions()}>
+              <View
                 style={[
-                  styles.todoNameText,
-                  { color: getTodoColor(item).text },
+                  styles.todos,
+                  { backgroundColor: getTodoColor(item).bg },
                 ]}
-                numberOfLines={1}
-                ellipsizeMode="tail"
               >
-                {item.name}
-              </Text>
-            </View>
-            <View>
-              <CheckBox color={getTodoColor(item).checkbox} />
-            </View>
+                <View style={{ width: "85%" }}>
+                  <Text
+                    style={[
+                      styles.todoCatText,
+                      { color: getTodoColor(item).text },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.category.split("-")[0]}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.todoNameText,
+                      { color: getTodoColor(item).text },
+                    ]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {item.name}
+                  </Text>
+                </View>
+                <View>
+                  <CheckBox color={getTodoColor(item).checkbox} />
+                </View>
+              </View>
+            </Swipeable>
           </View>
         ))}
       </View>
@@ -394,25 +416,44 @@ const styles = StyleSheet.create({
   todoAddBtn: {},
   addBtnText: { color: themeColors.text, fontWeight: 600, fontSize: 27 },
 
-  todos: {
+  todoWrapper: {
     flex: 1,
+    width: "100%",
+    backgroundColor: "tomato",
+    overflow: "hidden",
+    borderRadius: 13,
+    marginTop: 21,
+    height: 77,
+  },
+  todos: {
     width: "100%",
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    borderRadius: 13,
-    marginTop: 21,
+    borderRadius: 13, // 넣을까 뺄까?
     paddingVertical: "5%",
     paddingHorizontal: "7%",
     width: "100%",
-    height: 77,
+    height: "100%",
   },
   todoNameText: {
-    fontSize: 21,
+    fontSize: 19,
     fontWeight: 500,
   },
   todoCatText: {
     fontSize: 13,
+  },
+  deleteButton: {
+    backgroundColor: "tomato",
+    justifyContent: "center",
+    alignItems: "flex-end",
+    paddingHorizontal: 21,
+    height: "100%",
+  },
+  deleteButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    fontSize: 17,
   },
 });
 

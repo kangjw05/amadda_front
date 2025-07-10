@@ -341,7 +341,7 @@ const PersonalCalendar = () => {
         });
 
         setTodos(tempTodos);
-        console.log("퍼스널", tempTodos); // 테스트
+        // console.log("퍼스널", tempTodos); // 테스트
       } catch (error) {
         console.log("plan update 실패", error);
       }
@@ -350,17 +350,36 @@ const PersonalCalendar = () => {
     loadAllPlan();
   }, []);
 
+  // const test_post = async () => {
+  //   try {
+  //     const token = await SecureStore.getItemAsync("accessToken");
+  //     const response = await api.post("/plan/push_plan", {
+  //       name: "testD",
+  //       create_at: token,
+  //       date: "2025-07-09T22:33:52.841Z",
+  //       category: "testC-3",
+  //     });
+  //   } catch (error) {
+  //     console.log(error);
+  //   }
+  // };
+
   const test_post = async () => {
     try {
       const token = await SecureStore.getItemAsync("accessToken");
+      const resInfo = await api.get("users/info");
+      console.log("🔑 현재 토큰:", token);
+
       const response = await api.post("/plan/push_plan", {
         name: "testD",
-        create_at: token,
-        date: "2025-07-10",
-        category: "testC-3",
+        create_at: "test",
+        date: new Date().toISOString(),
+        category: "중요-2",
       });
+
+      console.log("✅ 성공:", response.data);
     } catch (error) {
-      console.log(error);
+      console.log("❌ 에러:", error.response?.data || error.message);
     }
   };
 
