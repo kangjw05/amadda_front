@@ -19,7 +19,6 @@ import styles from "../styles/DeluserScreenStyles";
 import { AuthContext } from "../context/AuthContext";
 
 const DeluserScreen = () => {
-  const navigation = useNavigation();
   const { setIsLoggedIn } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -62,45 +61,52 @@ const DeluserScreen = () => {
   }, []);
 
   const deluser = async () => {
-    Alert.alert(
-      "앱 탈퇴",
-      "정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
-      [
-        {
-          text: "취소",
-          style: "cancel",
-        },
-        {
-          text: "확인",
-          style: "destructive",
-          onPress: async () => {
-            try {
-
-              const response = await api.post("/users/del_user");
-              console.log("앱 탈퇴 응답:", response.status, response.data);
-
-              if (response.status === 200){
-              // regardless of result, clear tokens
-              await SecureStore.deleteItemAsync("accessToken");
-              await SecureStore.deleteItemAsync("refreshToken");
-              Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다.");
-              setIsLoggedIn(false); // 로그인 상태 해제
-              } else {
-                Alert.alert("탈퇴 실패", response.data|| "다시 시도해주세요.");
-                return;
-              }
-              // navigation.reset({
-              //   index: 0,
-              //   routes: [{ name: "LoginScreen" }], // LoginScreen으로 이동
-              // });
-            } catch (error) {
-              console.error("탈퇴 네트워크 오류:", error);
-              Alert.alert("오류", "서버에 연결할 수 없습니다.");
-            }
+    if (!codeVerified) {
+      Alert.alert(
+        "탈퇴 실패",
+        "이메일 인증을 진행해주세요"
+      )
+    } else {
+      Alert.alert(
+        "앱 탈퇴",
+        "정말 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+        [
+          {
+            text: "취소",
+            style: "cancel",
           },
-        },
-      ]
-    );
+          {
+            text: "확인",
+            style: "destructive",
+            onPress: async () => {
+              try {
+
+                const response = await api.post("/users/del_user");
+                console.log("앱 탈퇴 응답:", response.status, response.data);
+
+                if (response.status === 200){
+                // regardless of result, clear tokens
+                await SecureStore.deleteItemAsync("accessToken");
+                await SecureStore.deleteItemAsync("refreshToken");
+                Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다.");
+                setIsLoggedIn(false); // 로그인 상태 해제
+                } else {
+                  Alert.alert("탈퇴 실패", response.data|| "다시 시도해주세요.");
+                  return;
+                }
+                // navigation.reset({
+                //   index: 0,
+                //   routes: [{ name: "LoginScreen" }], // LoginScreen으로 이동
+                // });
+              } catch (error) {
+                console.error("탈퇴 네트워크 오류:", error);
+                Alert.alert("오류", "서버에 연결할 수 없습니다.");
+              }
+            },
+          },
+        ]
+      );
+    }
   };
 
   return (
