@@ -10,6 +10,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../api";
 import { API_BASE_URL } from "@env";
 import * as SecureStore from "expo-secure-store";
@@ -19,12 +20,10 @@ import { AuthContext } from "../context/AuthContext";
 
 const DeluserScreen = () => {
   const navigation = useNavigation();
-  const { setUserInfo, setIsLoggedIn } = useContext(AuthContext);
+  const { setIsLoggedIn } = useContext(AuthContext);
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [codeVerified, setCodeVerified] = useState(false);
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   useEffect(() => {
     let timerId;
 
@@ -33,9 +32,12 @@ const DeluserScreen = () => {
       if (!storedEmail) return;
 
       try {
-        const ttlRes = await api.get(`${API_BASE_URL}/email/ttl`, {
+        const ttlRes = await api.get("/email/ttl", {
           params: { email: storedEmail },
-        });
+        },
+      {
+        headers: { Authorization: undefined }
+      });
 
         if (ttlRes.data.success) {
           const ttl = ttlRes.data.ttl;
@@ -75,33 +77,20 @@ const DeluserScreen = () => {
           style: "destructive",
           onPress: async () => {
             try {
-              const accessToken = await SecureStore.getItemAsync("accessToken");
 
-              const response = await fetch(
-                "http://ser.iptime.org:8000/users/del_user",
-                {
-                  method: "POST",
-                  headers: {
-                    Authorization: `Bearer ${accessToken}`,
-                  },
-                  credentials: "include",
-                }
-              );
+              const response = await api.post("/users/del_user");
+              console.log("앱 탈퇴 응답:", response.status, response.data);
 
-              const responseText = await response.text();
-              console.log("앱 탈퇴 응답:", response.status, responseText);
-
+              if (response.status === 200){
               // regardless of result, clear tokens
               await SecureStore.deleteItemAsync("accessToken");
               await SecureStore.deleteItemAsync("refreshToken");
-
-              if (!response.ok) {
-                Alert.alert("탈퇴 실패", responseText || "다시 시도해주세요.");
-                return;
-              }
-
               Alert.alert("탈퇴 완료", "회원 탈퇴가 완료되었습니다.");
               setIsLoggedIn(false); // 로그인 상태 해제
+              } else {
+                Alert.alert("탈퇴 실패", response.data|| "다시 시도해주세요.");
+                return;
+              }
               // navigation.reset({
               //   index: 0,
               //   routes: [{ name: "LoginScreen" }], // LoginScreen으로 이동
@@ -156,13 +145,8 @@ const DeluserScreen = () => {
               }
               try {
                 const res = await api.post(
-                  `${API_BASE_URL}/email/request`,
+                  "/email/request",
                   { email },
-                  {
-                    headers: {
-                      "Content-Type": "application/json",
-                    },
-                  }
                 );
 
                 // 상태 코드가 200이면 성공 처리
@@ -182,8 +166,7 @@ const DeluserScreen = () => {
                 } else {
                   console.error("서버 응답 상태:", err.response?.status);
                   console.error("서버 응답 데이터:", err.response?.data);
-                  // alert("서버 오류가 발생했습니다.");
-                  // 이거 일단 오류가 있어 이게 뜨는데 없으면 문제 없어 보여서 주석처리 해뒀음 고민을 같이 해봅세
+                  alert("서버 오류가 발생했습니다.");
                 }
               }
             }}
@@ -226,13 +209,8 @@ const DeluserScreen = () => {
                 }
                 try {
                   const res = await api.post(
-                    `${API_BASE_URL}/email/verify`,
+                    "/email/verify",
                     { email, code },
-                    {
-                      headers: {
-                        "Content-Type": "application/json",
-                      },
-                    }
                   );
                   if (res.status === 200) {
                     setCodeVerified(true);
