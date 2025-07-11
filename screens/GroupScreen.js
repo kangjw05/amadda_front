@@ -371,46 +371,50 @@ const GroupScreen = () => {
     fetchGroupInfo();
   }, []);
 
-  // 기본 setTodos 호출
+  const loadAllGroupPlan = async () => {
+    try {
+      const tempTodos = {};
+
+      const groupRes = await api.get("/plan/group_plans", {
+        params: {
+          code: group.code,
+        },
+        headers: {
+          Authorization: `Bearer ${groupUUID}`,
+        },
+      });
+      // console.log("그룹 플랜 요청", groupRes);
+      const groupTodos = groupRes.data;
+
+      groupTodos.forEach((todo) => {
+        const dateKey = todo.date.split("T")[0];
+        if (!tempTodos[dateKey]) {
+          tempTodos[dateKey] = [];
+        }
+
+        tempTodos[dateKey].push({
+          uuid: todo.uuid,
+          name: todo.name,
+          category: todo.category,
+          isActive: !todo.is_active,
+          isGroup: true,
+        });
+      });
+
+      setTodos(tempTodos);
+      // console.log("퍼스널", tempTodos); // 테스트
+    } catch (error) {
+      console.log("그룹 플랜 업데이트 실패", error);
+    }
+  };
+
+  // 기본 setTodos 호출 +
+  // 색상, 그룹 이름 바뀔때마다 리렌더링
   useEffect(() => {
-    const loadAllGroupPlan = async () => {
-      try {
-        const tempTodos = {};
-
-        const groupRes = await api.get("/plan/group_plans", {
-          params: {
-            code: group.code,
-          },
-          headers: {
-            Authorization: `Bearer ${groupUUID}`,
-          },
-        });
-        // console.log("그룹 플랜 요청", groupRes);
-        const groupTodos = groupRes.data;
-
-        groupTodos.forEach((todo) => {
-          const dateKey = todo.date.split("T")[0];
-          if (!tempTodos[dateKey]) {
-            tempTodos[dateKey] = [];
-          }
-
-          tempTodos[dateKey].push({
-            uuid: todo.uuid,
-            name: todo.name,
-            category: todo.category,
-            isActive: !todo.is_active,
-            isGroup: true,
-          });
-        });
-
-        setTodos(tempTodos);
-        // console.log("퍼스널", tempTodos); // 테스트
-      } catch (error) {
-        console.log("그룹 플랜 업데이트 실패", error);
-      }
-    };
-    loadAllGroupPlan();
-  }, []);
+    if (groupUUID && groupName && groupColor) {
+      loadAllGroupPlan();
+    }
+  }, [groupName, groupColor, groupUUID]);
 
   useEffect(() => {
     if (members.length > 0 && !groupUUID) {
