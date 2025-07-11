@@ -33,7 +33,8 @@ const GroupScreen = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedRole, setSelectedRole] = useState("그룹원");
   const [groupPassword, setGroupPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);const [groupNameInput, setGroupNameInput] = useState(group.name); // 화면 표시용
+  const [showPassword, setShowPassword] = useState(false);
+  const [groupNameInput, setGroupNameInput] = useState(group.name); // 화면 표시용
   const [groupName, setGroupName] = useState(group.name);
   const [editingGroupName, setEditingGroupName] = useState(""); // 편집용
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
@@ -605,7 +606,7 @@ const GroupScreen = () => {
       {/* 권한 설정 모달 */}
       <Modal
         visible={isPermissionModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={() => setIsPermissionModalVisible(false)}
       >
@@ -689,14 +690,16 @@ const GroupScreen = () => {
       {/* 그룹 정보 모달 */}
       <Modal
         visible={addMemberModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={() => setIsEditingGroupName(false)}
       >
-        <TouchableWithoutFeedback onPress={() => {
-          setAddMemberModalVisible(false);
-          setIsEditingGroupName(false);
-          }}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            setAddMemberModalVisible(false);
+            setIsEditingGroupName(false);
+          }}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.groupInfoModal}>
@@ -723,7 +726,7 @@ const GroupScreen = () => {
                         placeholder={groupName}
                         value={editingGroupName}
                         onChangeText={setEditingGroupName}
-                        onSubmitEditing={saveGroupName}  // 엔터 누르면 저장
+                        onSubmitEditing={saveGroupName} // 엔터 누르면 저장
                         autoFocus
                         style={styles.infoText}
                         maxLength={10}
@@ -791,7 +794,7 @@ const GroupScreen = () => {
       <Modal
         visible={colorModalVisible}
         transparent={true}
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setColorModalVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setColorModalVisible(false)}>

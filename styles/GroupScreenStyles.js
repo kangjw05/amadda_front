@@ -12,6 +12,7 @@ const GroupScreenStyles = StyleSheet.create({
     borderBottomColor: themeColors.highlight,
     borderBottomWidth: 1,
     alignItems: "center",
+    height: 65,
   },
   headText: {
     flex: 1,
@@ -74,11 +75,16 @@ const GroupScreenStyles = StyleSheet.create({
     marginRight: 5,
   },
   modalOverlay: {
-  flex: 1,
-  backgroundColor: "rgba(0,0,0,0.4)",
-  justifyContent: "center",
-  alignItems: "center",
-},
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.4)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
   modalContainer: {
     backgroundColor: themeColors.bg,
     borderRadius: 8,
@@ -117,11 +123,11 @@ const GroupScreenStyles = StyleSheet.create({
   actionButtonText: {
     color: "white",
     fontWeight: "bold",
-  },// GroupScreenStyles.js 하단에 이어서 붙여주세요
+  },
   menuModalContainer: {
     position: "absolute",
-    top: 10,     // 헤더 높이에 맞춰 조정
-    right: 10,   // 오른쪽 여백
+    top: 155, // 헤더 높이에 맞춰 조정
+    right: 10, // 오른쪽 여백
     width: "auto",
     backgroundColor: themeColors.bg,
     borderRadius: 10,
@@ -211,15 +217,15 @@ const GroupScreenStyles = StyleSheet.create({
     fontWeight: "bold",
   },
   modalHeader: {
-  marginBottom: 12,
-  borderBottomColor: themeColors.text,
-  borderBottomWidth: 1.5,
+    marginBottom: 12,
+    borderBottomColor: themeColors.text,
+    borderBottomWidth: 1.5,
   },
   modalTitle: {
     fontSize: 18,
     color: themeColors.highlight,
     textAlign: "center",
-    margin: 5
+    margin: 5,
   },
   colorGrid: {
     flexDirection: "row",
@@ -266,7 +272,6 @@ const GroupScreenStyles = StyleSheet.create({
   },
   authModalHeader: {
     flexDirection: "row",
-
   },
 });
 
