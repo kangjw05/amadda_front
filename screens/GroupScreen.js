@@ -33,16 +33,18 @@ const GroupScreen = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedRole, setSelectedRole] = useState("그룹원");
   const [groupPassword, setGroupPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);const [groupNameInput, setGroupNameInput] = useState(group.name); // 화면 표시용
+  const [groupName, setGroupName] = useState(group.name);
+  const [editingGroupName, setEditingGroupName] = useState(""); // 편집용
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
-  const [groupNameInput, setGroupNameInput] = useState(group.name);
+  const [groupColor, setGroupColor] = useState(group.colorKey);
 
   const [menuModalVisible, setMenuModalVisible] = useState(false);
   const [memberListModalVisible, setMemberListModalVisible] = useState(false);
   const [addMemberModalVisible, setAddMemberModalVisible] = useState(false);
   const [colorModalVisible, setColorModalVisible] = useState(false);
-  const [selectedColorKey, setSelectedColorKey] = useState("group1");
-  const [myRole, setMyRole] = useState(); // 내 권한 ( 0/1/2 )
+  const [selectedColorKey, setSelectedColorKey] = useState(group.colorKey);
+  const [myRole, setMyRole] = useState();
   const [members, setMembers] = useState([]);
 
   const [groupUUID, setGroupUUID] = useState("");
@@ -69,6 +71,19 @@ const GroupScreen = () => {
       setMyRole(res.data);
     } catch (err) {
       console.error("권한 확인 실패:", err);
+    }
+  };
+
+  const fetchGroupInfo = async () => {
+    try {
+      const res = await api.get("/group/search_group", {
+        params: { code: group.code },
+      });
+      const data = res.data;
+      setGroupName(data.name);
+      setGroupColor(data.group_color);
+    } catch (err) {
+      console.error("그룹 정보 불러오기 실패:", err);
     }
   };
 
@@ -129,42 +144,56 @@ const GroupScreen = () => {
   };
 
   const saveGroupName = async () => {
-    const trimmedName = groupNameInput.trim();
-    console.log("최종 전송 그룹 이름:", trimmedName);
-
+    const trimmedName = editingGroupName.trim();
     if (trimmedName === "") {
       Alert.alert("이름 입력 오류", "그룹 이름을 입력해주세요.");
       setIsEditingGroupName(false);
-      setGroupNameInput(group.name);
       return;
     }
 
     try {
-      // 요청 보내기
       await api.post("/group/change_info", {
+        code: group.code,
         name: trimmedName,
-        password: groupPassword,
-        group_color: group.colorKey,
+        color: groupColor,
       });
 
-      Alert.alert("변경 완료", "그룹 이름이 변경되었습니다.");
+      setGroupName(trimmedName); // 화면 표시용 상태 갱신
       setIsEditingGroupName(false);
-      // 여기서 group.name을 업데이트하고 싶다면 navigation.goBack() 후 다시 진입하는 게 안전
+      Alert.alert("변경 완료", "그룹 이름이 변경되었습니다.");
+    } catch (error) {
+      console.error("그룹 이름 변경 실패:", error);
+      Alert.alert("오류", "그룹 이름 변경에 실패했습니다.");
+      setIsEditingGroupName(false);
+    }
+  };
+
+  const saveGroupColor = async () => {
+    console.log("선택된 색상:", selectedColorKey);
+
+    try {
+      // 요청 보내기
+      await api.post("/group/change_info", {
+        code: group.code,
+        name: groupNameInput,
+        color: selectedColorKey, // 중요: groups 색상 키
+      });
+
+      fetchGroupInfo();
+      setGroupColor(selectedColorKey);
+      Alert.alert("변경 완료", "그룹 색상이 변경되었습니다.");
+      setColorModalVisible(false);
     } catch (error) {
       if (error.response) {
         console.error("서버 응답 오류:", error.response.data);
-        console.error("서버 응답 오류:", error.status);
-        console.error("서버 응답 오류:", error.response);
         Alert.alert(
           "업데이트 실패",
-          error.response.data?.detail || "그룹 이름 변경 실패"
+          error.response.data?.detail || "그룹 색상 변경 실패"
         );
       } else {
         console.error("네트워크 오류:", error);
         Alert.alert("오류", "서버에 연결할 수 없습니다.");
       }
-      setIsEditingGroupName(false);
-      setGroupNameInput(group.name);
     }
   };
 
@@ -262,7 +291,7 @@ const GroupScreen = () => {
   };
 
   const handleCopyGroupInfo = () => {
-    const textToCopy = `그룹 코드: ${group.code}\n그룹 비밀번호: ${groupPassword}`;
+    const textToCopy = `${groupName} 그룹에 초대합니다.\n그룹 코드: ${group.code}\n그룹 비밀번호: ${groupPassword}`;
     Clipboard.setStringAsync(textToCopy);
     Alert.alert("복사 완료", "그룹 정보가 클립보드에 복사되었습니다.");
   };
@@ -338,6 +367,7 @@ const GroupScreen = () => {
     fetchAuth();
     fetchMembers();
     fetchGroupPassword();
+    fetchGroupInfo();
   }, []);
 
   // 기본 setTodos 호출
@@ -407,7 +437,7 @@ const GroupScreen = () => {
           />
         </TouchableOpacity>
 
-        <Text style={styles.headText}>{group.name}</Text>
+        <Text style={styles.headText}>{groupName}</Text>
 
         <TouchableOpacity onPress={openMenuModal} style={styles.iconButton}>
           <Image
@@ -661,11 +691,12 @@ const GroupScreen = () => {
         visible={addMemberModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={() => setAddMemberModalVisible(false)}
+        onRequestClose={() => setIsEditingGroupName(false)}
       >
-        <TouchableWithoutFeedback
-          onPress={() => setAddMemberModalVisible(false)}
-        >
+        <TouchableWithoutFeedback onPress={() => {
+          setAddMemberModalVisible(false);
+          setIsEditingGroupName(false);
+          }}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.groupInfoModal}>
@@ -689,20 +720,20 @@ const GroupScreen = () => {
                   <View style={styles.infoInputRow}>
                     {isEditingGroupName ? (
                       <TextInput
-                        placeholder={group.name}
-                        value={groupNameInput}
-                        onChangeText={setGroupNameInput}
-                        onBlur={saveGroupName}
+                        placeholder={groupName}
+                        value={editingGroupName}
+                        onChangeText={setEditingGroupName}
+                        onSubmitEditing={saveGroupName}  // 엔터 누르면 저장
                         autoFocus
                         style={styles.infoText}
-                        maxLength={20}
+                        maxLength={10}
                       />
                     ) : (
                       <>
-                        <Text style={styles.infoText}>{groupNameInput}</Text>
+                        <Text style={styles.infoText}>{groupName}</Text>
                         <TouchableOpacity
                           onPress={() => {
-                            setGroupNameInput(""); // SettingScreen처럼 초기화
+                            setEditingGroupName(""); // 빈칸으로 시작
                             setIsEditingGroupName(true);
                           }}
                         >
@@ -802,11 +833,7 @@ const GroupScreen = () => {
                     <Text style={styles.actionButtonText}>취소</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    onPress={() => {
-                      // 여기에서 색상 변경 로직 호출
-                      console.log("선택된 색상:", selectedColorKey);
-                      setColorModalVisible(false);
-                    }}
+                    onPress={saveGroupColor}
                     style={styles.actionButton}
                   >
                     <Text style={styles.actionButtonText}>변경</Text>

@@ -38,7 +38,6 @@ const GroupListScreen = () => {
     const unsubscribe = navigation.addListener("focus", () => {
       loadGroups();
     });
-
     return unsubscribe;
   }, [navigation]);
 
@@ -184,6 +183,9 @@ const GroupListScreen = () => {
         myGroupCodes.map(async (g) => {
           const detailResponse = await api.get("/group/search_group", {
             params: { code: g.code },
+            headers: {
+              "Cache-Control": "no-cache",
+            },
           });
           const groupData = detailResponse.data;
 
@@ -509,7 +511,7 @@ const GroupListScreen = () => {
               onPress={() => navigation.navigate("GroupScreen", { group: item })}>
               <View 
                 style={[styles.groupIconContainer, 
-                { backgroundColor: colorTheme.checkbox }]}>
+                { backgroundColor: groups[item.colorKey].checkbox }]}>
                   <Image
                     source={require("../assets/images/groupIcon.png")}
                     style={styles.groupIcon}
