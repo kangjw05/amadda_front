@@ -33,7 +33,8 @@ const GroupScreen = () => {
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedRole, setSelectedRole] = useState("그룹원");
   const [groupPassword, setGroupPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);const [groupNameInput, setGroupNameInput] = useState(group.name); // 화면 표시용
+  const [showPassword, setShowPassword] = useState(false);
+  const [groupNameInput, setGroupNameInput] = useState(group.name); // 화면 표시용
   const [groupName, setGroupName] = useState(group.name);
   const [editingGroupName, setEditingGroupName] = useState(""); // 편집용
   const [isEditingGroupName, setIsEditingGroupName] = useState(false);
@@ -370,46 +371,50 @@ const GroupScreen = () => {
     fetchGroupInfo();
   }, []);
 
-  // 기본 setTodos 호출
+  const loadAllGroupPlan = async () => {
+    try {
+      const tempTodos = {};
+
+      const groupRes = await api.get("/plan/group_plans", {
+        params: {
+          code: group.code,
+        },
+        headers: {
+          Authorization: `Bearer ${groupUUID}`,
+        },
+      });
+      // console.log("그룹 플랜 요청", groupRes);
+      const groupTodos = groupRes.data;
+
+      groupTodos.forEach((todo) => {
+        const dateKey = todo.date.split("T")[0];
+        if (!tempTodos[dateKey]) {
+          tempTodos[dateKey] = [];
+        }
+
+        tempTodos[dateKey].push({
+          uuid: todo.uuid,
+          name: todo.name,
+          category: todo.category,
+          isActive: !todo.is_active,
+          isGroup: true,
+        });
+      });
+
+      setTodos(tempTodos);
+      // console.log("퍼스널", tempTodos); // 테스트
+    } catch (error) {
+      console.log("그룹 플랜 업데이트 실패", error);
+    }
+  };
+
+  // 기본 setTodos 호출 +
+  // 색상, 그룹 이름 바뀔때마다 리렌더링
   useEffect(() => {
-    const loadAllGroupPlan = async () => {
-      try {
-        const tempTodos = {};
-
-        const groupRes = await api.get("/plan/group_plans", {
-          params: {
-            code: group.code,
-          },
-          headers: {
-            Authorization: `Bearer ${groupUUID}`,
-          },
-        });
-        // console.log("그룹 플랜 요청", groupRes);
-        const groupTodos = groupRes.data;
-
-        groupTodos.forEach((todo) => {
-          const dateKey = todo.date.split("T")[0];
-          if (!tempTodos[dateKey]) {
-            tempTodos[dateKey] = [];
-          }
-
-          tempTodos[dateKey].push({
-            uuid: todo.uuid,
-            name: todo.name,
-            category: todo.category,
-            isActive: !todo.is_active,
-            isGroup: true,
-          });
-        });
-
-        setTodos(tempTodos);
-        // console.log("퍼스널", tempTodos); // 테스트
-      } catch (error) {
-        console.log("그룹 플랜 업데이트 실패", error);
-      }
-    };
-    loadAllGroupPlan();
-  }, []);
+    if (groupUUID && groupName && groupColor) {
+      loadAllGroupPlan();
+    }
+  }, [groupName, groupColor, groupUUID]);
 
   useEffect(() => {
     if (members.length > 0 && !groupUUID) {
@@ -605,7 +610,7 @@ const GroupScreen = () => {
       {/* 권한 설정 모달 */}
       <Modal
         visible={isPermissionModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={() => setIsPermissionModalVisible(false)}
       >
@@ -689,14 +694,16 @@ const GroupScreen = () => {
       {/* 그룹 정보 모달 */}
       <Modal
         visible={addMemberModalVisible}
-        animationType="slide"
+        animationType="none"
         transparent={true}
         onRequestClose={() => setIsEditingGroupName(false)}
       >
-        <TouchableWithoutFeedback onPress={() => {
-          setAddMemberModalVisible(false);
-          setIsEditingGroupName(false);
-          }}>
+        <TouchableWithoutFeedback
+          onPress={() => {
+            setAddMemberModalVisible(false);
+            setIsEditingGroupName(false);
+          }}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.groupInfoModal}>
@@ -723,7 +730,7 @@ const GroupScreen = () => {
                         placeholder={groupName}
                         value={editingGroupName}
                         onChangeText={setEditingGroupName}
-                        onSubmitEditing={saveGroupName}  // 엔터 누르면 저장
+                        onSubmitEditing={saveGroupName} // 엔터 누르면 저장
                         autoFocus
                         style={styles.infoText}
                         maxLength={10}
@@ -791,7 +798,7 @@ const GroupScreen = () => {
       <Modal
         visible={colorModalVisible}
         transparent={true}
-        animationType="slide"
+        animationType="none"
         onRequestClose={() => setColorModalVisible(false)}
       >
         <TouchableWithoutFeedback onPress={() => setColorModalVisible(false)}>
