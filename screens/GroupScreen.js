@@ -10,6 +10,7 @@ import {
   Alert,
   ScrollView,
 } from "react-native";
+
 import { Picker } from "@react-native-picker/picker";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import * as Clipboard from "expo-clipboard";
@@ -18,13 +19,17 @@ import styles from "../styles/GroupScreenStyles";
 import { themeColors, groups } from "../Colors";
 import Header from "../components/header";
 import api from "../api";
+import Calendar from "../components/calendar";
+import { jwtDecode } from "jwt-decode";
+import * as SecureStore from "expo-secure-store";
 
 const GroupScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { group } = route.params;
+  const { group } = route.params; // group.code 존재
 
-  const [isPermissionModalVisible, setIsPermissionModalVisible] = useState(false);
+  const [isPermissionModalVisible, setIsPermissionModalVisible] =
+    useState(false);
   const [selectedMember, setSelectedMember] = useState(null);
   const [selectedRole, setSelectedRole] = useState("그룹원");
   const [groupPassword, setGroupPassword] = useState("");
@@ -42,13 +47,16 @@ const GroupScreen = () => {
   const [myRole, setMyRole] = useState();
   const [members, setMembers] = useState([]);
 
+  const [groupUUID, setGroupUUID] = useState("");
+  const [todos, setTodos] = useState({});
+
   const openMenuModal = () => {
     // 다른 모달 닫기
     setMemberListModalVisible(false);
     setAddMemberModalVisible(false);
     setColorModalVisible(false);
     setIsPermissionModalVisible(false);
-    
+
     // 메뉴 모달 열기
     setMenuModalVisible(true);
   };
@@ -85,7 +93,7 @@ const GroupScreen = () => {
         params: { code: group.code },
       });
       setGroupPassword(res.data.password); // 서버에서 받아온 평문 비밀번호
-      console.log(res.data)
+      console.log(res.data);
     } catch (err) {
       console.error("그룹 비밀번호 가져오기 실패:", err);
       console.error("그룹 비밀번호 가져오기 실패:", err.data);
@@ -211,7 +219,10 @@ const GroupScreen = () => {
                     style: "destructive",
                     onPress: async (inputText) => {
                       if (inputText.trim() !== group.name) {
-                        Alert.alert("오류", "입력한 이름이 그룹 이름과 일치하지 않습니다.");
+                        Alert.alert(
+                          "오류",
+                          "입력한 이름이 그룹 이름과 일치하지 않습니다."
+                        );
                         return;
                       }
                       try {
@@ -219,14 +230,25 @@ const GroupScreen = () => {
                           code: group.code,
                         });
                         if (response.status === 200) {
-                          Alert.alert("완료", `"${group.name}" 그룹이 삭제되었습니다.`);
-                          navigation.navigate("GroupListScreen", { refresh: true });
+                          Alert.alert(
+                            "완료",
+                            `"${group.name}" 그룹이 삭제되었습니다.`
+                          );
+                          navigation.navigate("GroupListScreen", {
+                            refresh: true,
+                          });
                         } else {
                           Alert.alert("에러", "그룹 삭제에 실패했습니다.");
                         }
                       } catch (error) {
-                        console.error("그룹 삭제 실패:", error.response?.data || error.message);
-                        Alert.alert("에러", "그룹 삭제 중 오류가 발생했습니다.");
+                        console.error(
+                          "그룹 삭제 실패:",
+                          error.response?.data || error.message
+                        );
+                        Alert.alert(
+                          "에러",
+                          "그룹 삭제 중 오류가 발생했습니다."
+                        );
                       }
                     },
                   },
@@ -239,33 +261,32 @@ const GroupScreen = () => {
       );
     } else {
       // 그룹원/관리자일 경우 그룹 나가기
-      Alert.alert(
-        "그룹 나가기",
-        `"${group.name}" 그룹을 나가시겠습니까?`,
-        [
-          { text: "취소", style: "cancel" },
-          {
-            text: "나가기",
-            style: "destructive",
-            onPress: async () => {
-              try {
-                const response = await api.post("/group/out_group", {
-                  code: group.code,
-                });
-                if (response.status === 200) {
-                  Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
-                  navigation.navigate("GroupListScreen", { refresh: true });
-                } else {
-                  Alert.alert("에러", "그룹 나가기에 실패했습니다.");
-                }
-              } catch (error) {
-                console.error("그룹 나가기 실패:", error.response?.data || error.message);
+      Alert.alert("그룹 나가기", `"${group.name}" 그룹을 나가시겠습니까?`, [
+        { text: "취소", style: "cancel" },
+        {
+          text: "나가기",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const response = await api.post("/group/out_group", {
+                code: group.code,
+              });
+              if (response.status === 200) {
+                Alert.alert("완료", `"${group.name}" 그룹에서 나갔습니다.`);
+                navigation.navigate("GroupListScreen", { refresh: true });
+              } else {
                 Alert.alert("에러", "그룹 나가기에 실패했습니다.");
               }
-            },
+            } catch (error) {
+              console.error(
+                "그룹 나가기 실패:",
+                error.response?.data || error.message
+              );
+              Alert.alert("에러", "그룹 나가기에 실패했습니다.");
+            }
           },
-        ]
-      );
+        },
+      ]);
     }
   };
 
@@ -275,6 +296,73 @@ const GroupScreen = () => {
     Alert.alert("복사 완료", "그룹 정보가 클립보드에 복사되었습니다.");
   };
 
+  // 캘린더 핸들러 시작
+
+  const getCategoryTag = () => {
+    const colorNum = group.colorKey.replace("group", "");
+    return `${group.name}-${colorNum}`;
+  };
+
+  const handleAddTodo = async (newTodo) => {
+    try {
+      // 1, 새 일정 post
+      const response = await api.post("/plan/push_plan", {
+        name: newTodo.name,
+        category: getCategoryTag(),
+        date: newTodo.date,
+        create_at: group.code,
+      });
+
+      Alert.alert("그룹 일정 추가 성공", "일정을 추가했습니다!");
+
+      // 2, 렌더할 새 일정 추가
+      const addedTodo = {
+        uuid: response.data.uuid,
+        name: response.data.name,
+        category: response.data.category,
+        isActive: !response.data.is_active,
+        isGroup: true,
+      };
+
+      // 4, 새 일정 렌더
+      setTodos((prev) => {
+        const dateKey = response.data.date.split("T")[0];
+        const updated = { ...prev };
+        if (!updated[dateKey]) updated[dateKey] = [];
+        updated[dateKey].push(addedTodo);
+
+        return updated;
+      });
+    } catch (err) {
+      console.log("그룹 일정 추가 실패", err.response);
+    }
+  };
+
+  const handleDeleteTodo = async (uuid, dateKey) => {
+    try {
+      const response = await api.post("/plan/del_group_plan", {
+        code: group.code,
+        uuid: uuid,
+      });
+
+      Alert.alert("그룹 일정 삭제", "그룹 일정 삭제 완료!");
+    } catch (err) {
+      console.log("그룹 플랜 삭제 실패", err.response);
+      Alert.alert("그룹 일정 삭제", "그룹 일정 삭제 실패\n다시 시도해주세요");
+      return;
+    }
+
+    // 삭제 성공한 경우에만 state 업데이트
+    setTodos((prev) => {
+      const filtered = prev[dateKey].filter((item) => item.uuid !== uuid);
+      return {
+        ...prev,
+        [dateKey]: filtered,
+      };
+    });
+  };
+
+  // 기본 State 초기화
   useEffect(() => {
     fetchAuth();
     fetchMembers();
@@ -282,22 +370,91 @@ const GroupScreen = () => {
     fetchGroupInfo();
   }, []);
 
+  // 기본 setTodos 호출
+  useEffect(() => {
+    const loadAllGroupPlan = async () => {
+      try {
+        const tempTodos = {};
+
+        const groupRes = await api.get("/plan/group_plans", {
+          params: {
+            code: group.code,
+          },
+          headers: {
+            Authorization: `Bearer ${groupUUID}`,
+          },
+        });
+        // console.log("그룹 플랜 요청", groupRes);
+        const groupTodos = groupRes.data;
+
+        groupTodos.forEach((todo) => {
+          const dateKey = todo.date.split("T")[0];
+          if (!tempTodos[dateKey]) {
+            tempTodos[dateKey] = [];
+          }
+
+          tempTodos[dateKey].push({
+            uuid: todo.uuid,
+            name: todo.name,
+            category: todo.category,
+            isActive: !todo.is_active,
+            isGroup: true,
+          });
+        });
+
+        setTodos(tempTodos);
+        // console.log("퍼스널", tempTodos); // 테스트
+      } catch (error) {
+        console.log("그룹 플랜 업데이트 실패", error);
+      }
+    };
+    loadAllGroupPlan();
+  }, []);
+
+  useEffect(() => {
+    if (members.length > 0 && !groupUUID) {
+      const leader = members.find((member) => member.auth === 0);
+      if (leader) {
+        setGroupUUID(leader.uuid);
+        // console.log("그룹장의 UUID:", leader.uuid);
+      }
+    }
+  }, [members]);
+
   return (
     <View style={styles.container}>
       <Header />
 
       {/* 상단 헤더 */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.iconButton}>
-          <Image source={require("../assets/images/backArrow.png")} style={styles.iconImage} />
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.iconButton}
+        >
+          <Image
+            source={require("../assets/images/backArrow.png")}
+            style={styles.iconImage}
+          />
         </TouchableOpacity>
 
         <Text style={styles.headText}>{groupName}</Text>
 
         <TouchableOpacity onPress={openMenuModal} style={styles.iconButton}>
-          <Image source={require("../assets/images/menuIcon.png")} style={styles.iconImage} />
+          <Image
+            source={require("../assets/images/menuIcon.png")}
+            style={styles.iconImage}
+          />
         </TouchableOpacity>
       </View>
+
+      <Calendar
+        todoData={todos}
+        onAddTodo={handleAddTodo}
+        onDeleteTodo={handleDeleteTodo}
+        onToggleTodo={() => {}}
+        permission={myRole}
+        personal={false}
+      />
 
       {/* 메뉴 모달 */}
       {menuModalVisible && (
@@ -313,7 +470,10 @@ const GroupScreen = () => {
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Image source={require("../assets/images/groupIcon.png")} style={styles.icon} />
+                    <Image
+                      source={require("../assets/images/groupIcon.png")}
+                      style={styles.icon}
+                    />
                     <Text style={styles.menuItemText}>그룹원 목록</Text>
                   </View>
                 </TouchableOpacity>
@@ -325,7 +485,10 @@ const GroupScreen = () => {
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Image source={require("../assets/images/infoIcon.png")} style={styles.infoIcon} />
+                    <Image
+                      source={require("../assets/images/infoIcon.png")}
+                      style={styles.infoIcon}
+                    />
                     <Text style={styles.menuItemText}>그룹 정보</Text>
                   </View>
                 </TouchableOpacity>
@@ -337,7 +500,10 @@ const GroupScreen = () => {
                   }}
                 >
                   <View style={{ flexDirection: "row", alignItems: "center" }}>
-                    <Image source={require("../assets/images/penIcon.png")} style={styles.icon} />
+                    <Image
+                      source={require("../assets/images/penIcon.png")}
+                      style={styles.icon}
+                    />
                     <Text style={styles.menuItemText}>그룹색 변경</Text>
                   </View>
                 </TouchableOpacity>
@@ -349,7 +515,9 @@ const GroupScreen = () => {
                       handleLeaveGroup(group);
                     }}
                   >
-                    <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
                       <Image
                         source={
                           myRole === 0
@@ -361,7 +529,7 @@ const GroupScreen = () => {
                       <Text
                         style={[
                           styles.menuItemText,
-                          { color: themeColors.sunday }
+                          { color: themeColors.sunday },
                         ]}
                       >
                         {myRole === 0 ? "그룹 삭제" : "그룹 나가기"}
@@ -377,49 +545,56 @@ const GroupScreen = () => {
 
       {/* 그룹원 목록 모달 */}
       {memberListModalVisible && (
-        <TouchableWithoutFeedback onPress={() => setMemberListModalVisible(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setMemberListModalVisible(false)}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.menuModalContainer}>
-                <View style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  borderBottomColor: themeColors.text,
-                  borderBottomWidth: 1.5,
-                }}>
-                  <Image source={require("../assets/images/groupIcon.png")} style={styles.icon} />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    borderBottomColor: themeColors.text,
+                    borderBottomWidth: 1.5,
+                  }}
+                >
+                  <Image
+                    source={require("../assets/images/groupIcon.png")}
+                    style={styles.icon}
+                  />
                   <Text style={styles.menuItemText}>그룹원 목록</Text>
                 </View>
                 <ScrollView style={{ maxHeight: 300 }}>
-                {members.map((member) => {
-                  const icon =
-                    member.auth === 0
-                      ? require("../assets/images/startIcon.png")
-                      : member.auth === 1
-                      ? require("../assets/images/shieldIcon.png")
-                      : require("../assets/images/authPersonIcon.png");
+                  {members.map((member) => {
+                    const icon =
+                      member.auth === 0
+                        ? require("../assets/images/startIcon.png")
+                        : member.auth === 1
+                        ? require("../assets/images/shieldIcon.png")
+                        : require("../assets/images/authPersonIcon.png");
 
-                  return (
-                    <TouchableOpacity
-                      key={member.uuid}
-                      style={styles.menuItem}
-                      onPress={() => {
-                        setSelectedMember(member);
-                        setSelectedRole(
-                          member.auth === 0
-                            ? "그룹장"
-                            : member.auth === 1
-                            ? "관리자"
-                            : "그룹원"
-                        );
-                        setIsPermissionModalVisible(true);
-                      }}
-                    >
-                      <Image source={icon} style={styles.subIcon} />
-                      <Text style={styles.itemText}>{member.name}</Text>
-                    </TouchableOpacity>
-                  );
-                })}
+                    return (
+                      <TouchableOpacity
+                        key={member.uuid}
+                        style={styles.menuItem}
+                        onPress={() => {
+                          setSelectedMember(member);
+                          setSelectedRole(
+                            member.auth === 0
+                              ? "그룹장"
+                              : member.auth === 1
+                              ? "관리자"
+                              : "그룹원"
+                          );
+                          setIsPermissionModalVisible(true);
+                        }}
+                      >
+                        <Image source={icon} style={styles.subIcon} />
+                        <Text style={styles.itemText}>{member.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
                 </ScrollView>
               </View>
             </TouchableWithoutFeedback>
@@ -434,7 +609,9 @@ const GroupScreen = () => {
         transparent={true}
         onRequestClose={() => setIsPermissionModalVisible(false)}
       >
-        <TouchableWithoutFeedback onPress={() => setIsPermissionModalVisible(false)}>
+        <TouchableWithoutFeedback
+          onPress={() => setIsPermissionModalVisible(false)}
+        >
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContainer}>
@@ -482,7 +659,9 @@ const GroupScreen = () => {
                       { justifyContent: "center", paddingHorizontal: 10 },
                     ]}
                   >
-                    <Text style={{ color: themeColors.highlight, fontSize: 16 }}>
+                    <Text
+                      style={{ color: themeColors.highlight, fontSize: 16 }}
+                    >
                       {selectedMember?.auth === 0
                         ? "그룹장"
                         : selectedMember?.auth === 1
@@ -521,8 +700,20 @@ const GroupScreen = () => {
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.groupInfoModal}>
-                <View style={{borderBottomColor: themeColors.text, borderBottomWidth: 2}}>
-                <Text style={[styles.inputLabel, { fontSize: 18, marginBottom: 12 }]}>그룹 정보</Text>
+                <View
+                  style={{
+                    borderBottomColor: themeColors.text,
+                    borderBottomWidth: 2,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      { fontSize: 18, marginBottom: 12 },
+                    ]}
+                  >
+                    그룹 정보
+                  </Text>
                 </View>
                 <View style={styles.infoSection}>
                   <Text style={styles.infoLabel}>그룹 이름</Text>
@@ -566,17 +757,20 @@ const GroupScreen = () => {
                   <Text style={styles.infoLabel}>그룹 비밀번호</Text>
                   <View style={styles.infoInputRow}>
                     <Text style={styles.infoText}>
-                      {showPassword ? groupPassword : "*".repeat(groupPassword.length)}
+                      {showPassword
+                        ? groupPassword
+                        : "*".repeat(groupPassword.length)}
                     </Text>
-                    <TouchableOpacity 
-                    style={styles.iconButtonSmall}
-                    onPress={() => setShowPassword(!showPassword)}
+                    <TouchableOpacity
+                      style={styles.iconButtonSmall}
+                      onPress={() => setShowPassword(!showPassword)}
                     >
                       <Image
                         source={
                           showPassword
                             ? require("../assets/images/eyeOffIcon.png")
-                            : require("../assets/images/eyeIcon.png")}
+                            : require("../assets/images/eyeIcon.png")
+                        }
                         style={{ width: 24, height: 24, resizeMode: "contain" }}
                       />
                     </TouchableOpacity>
@@ -600,9 +794,7 @@ const GroupScreen = () => {
         animationType="slide"
         onRequestClose={() => setColorModalVisible(false)}
       >
-        <TouchableWithoutFeedback
-          onPress={() => setColorModalVisible(false)}
-        >
+        <TouchableWithoutFeedback onPress={() => setColorModalVisible(false)}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContainer}>
