@@ -10,17 +10,27 @@ import {
   RefreshControl,
 } from "react-native";
 import Swipeable from "react-native-gesture-handler/Swipeable";
+import { FontAwesome } from "@expo/vector-icons";
+import { Feather } from "@expo/vector-icons";
 
 import { themeColors, categories, groups } from "../Colors";
 import CalendarPage from "./calendarPage";
 import CheckBox from "./checkbox";
 import AddTodoModal from "./AddTodoModal";
+import api from "../api";
 
 const screenWidth = Dimensions.get("window").width;
 
 const days = ["일", "월", "화", "수", "목", "금", "토"];
 
-const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
+const Calendar = ({
+  todoData = {},
+  onAddTodo,
+  onDeleteTodo,
+  onToggleTodo,
+  permission,
+  personal,
+}) => {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
 
@@ -215,9 +225,14 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
     }
   };
 
-  // 삭제 핸들링
   // 스와이프 삭제 렌더링
   const renderRightActions = (item) => {
+    // 만약 플랜이 그룹 플랜인데
+    // 퍼스널 캘린더 이거나 권한이 없다면 삭제 X
+    if (item.isGroup) {
+      if (personal || permission >= 2) return null;
+    }
+
     const handleDelete = () => {
       onDeleteTodo(item.uuid, getSelectedDateFormat());
     };
@@ -247,10 +262,10 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
             style={styles.moveMonthBtn}
             onPress={goToPreviousMonth}
           >
-            <Text style={styles.moveBtnText}>{"<"}</Text>
+            <Feather name="chevron-left" size={24} color="black" />
           </TouchableOpacity>
           <TouchableOpacity style={styles.moveMonthBtn} onPress={goToNextMonth}>
-            <Text style={styles.moveBtnText}>{">"}</Text>
+            <Feather name="chevron-right" size={24} color="black" />
           </TouchableOpacity>
         </View>
 
@@ -292,12 +307,14 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
           <Text style={styles.todoHeaderText}>
             {selectedDate.getMonth() + 1}월 {selectedDate.getDate()}일
           </Text>
-          <TouchableOpacity
-            style={styles.todoAddBtn}
-            onPress={() => setIsAddTodoVisible(true)}
-          >
-            <Text style={styles.addBtnText}>+</Text>
-          </TouchableOpacity>
+          {permission < 2 && (
+            <TouchableOpacity
+              style={styles.todoAddBtn}
+              onPress={() => setIsAddTodoVisible(true)}
+            >
+              <FontAwesome name="plus" size={19} color={themeColors.text} />
+            </TouchableOpacity>
+          )}
         </View>
         {(todoData[getSelectedDateFormat()] || []).map((item, index) => (
           <View key={item.uuid} style={styles.todoWrapper}>
@@ -331,7 +348,26 @@ const Calendar = ({ todoData = {}, onAddTodo, onDeleteTodo }) => {
                   </Text>
                 </View>
                 <View>
-                  <CheckBox color={getTodoColor(item).checkbox} />
+                  {item.isGroup ? (
+                    <Text
+                      style={{ fontSize: 15, color: getTodoColor(item).text }}
+                    >
+                      그룹
+                    </Text>
+                  ) : (
+                    <CheckBox
+                      color={getTodoColor(item).checkbox}
+                      uuid={item.uuid}
+                      initialChecked={item.isActive}
+                      onToggle={(newActive) =>
+                        onToggleTodo(
+                          item.uuid,
+                          getSelectedDateFormat(),
+                          newActive
+                        )
+                      }
+                    />
+                  )}
                 </View>
               </View>
             </Swipeable>
@@ -377,12 +413,7 @@ const styles = StyleSheet.create({
   moveMonthBtn: {
     alignItems: "center",
     justifyContent: "center",
-    width: 30,
-  },
-  // 버튼 속 텍스트
-  moveBtnText: {
-    fontSize: 24,
-    fontWeight: 300,
+    width: 45,
   },
   // 일월화수목금토일 컨테이너
   daysRow: {
@@ -430,8 +461,12 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   todoHeaderText: { color: themeColors.text, fontWeight: 600, fontSize: 27 },
-  todoAddBtn: {},
-  addBtnText: { color: themeColors.text, fontWeight: 600, fontSize: 27 },
+  todoAddBtn: {
+    width: 32,
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   todoWrapper: {
     flex: 1,

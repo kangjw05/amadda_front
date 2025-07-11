@@ -11,10 +11,21 @@ import {
 } from "react-native";
 
 import { Picker } from "@react-native-picker/picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 import { themeColors, categories, groups } from "../Colors";
 
 const getDaysInMonth = (year, month) => {
   return new Date(year, month, 0).getDate();
+};
+
+const getCategoryTag = (categoryName, colorKey) => {
+  const colorNumber = colorKey.replace("category", "");
+  return `${categoryName}-${colorNumber}`;
+};
+
+const getISODate = (year, month, date) => {
+  return new Date(year, month - 1, date, 12).toISOString();
 };
 
 const AddTodoModal = ({ visible, onClose, onAddTodo, selectedDate }) => {
@@ -28,6 +39,9 @@ const AddTodoModal = ({ visible, onClose, onAddTodo, selectedDate }) => {
 
   useEffect(() => {
     if (visible && selectedDate) {
+      setTodoText("");
+      setSelectedCategory(null);
+
       const newYear = selectedDate.getFullYear();
       const newMonth = selectedDate.getMonth() + 1;
       const newDate = selectedDate.getDate();
@@ -49,7 +63,40 @@ const AddTodoModal = ({ visible, onClose, onAddTodo, selectedDate }) => {
     }
   }, [todoYear, todoMonth]);
 
-  const [todoCategory, setTodoCategory] = useState("기타-1");
+  // 카테고리 목록 저장용 State
+  const [categoryList, setCategoryList] = useState([]);
+  // 비동기 스토리지에서 카테고리 리스트 가져오기
+  useEffect(() => {
+    const fetchCategories = async () => {
+      const stored = await AsyncStorage.getItem("categoriesList");
+      if (stored) {
+        // console.log(stored); // 테스트
+        setCategoryList(JSON.parse(stored));
+      }
+    };
+    fetchCategories();
+  }, [visible]);
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
+
+  const validateInputs = () => {
+    if (!todoText.trim()) {
+      alert("일정 내용을 입력해주세요.");
+      return false;
+    }
+    if (!selectedCategory) {
+      alert("카테고리를 선택해주세요.");
+      return false;
+    }
+    const isValidDate = !isNaN(
+      new Date(todoYear, todoMonth - 1, todoDate).getTime()
+    );
+    if (!isValidDate) {
+      alert("올바른 날짜를 선택해주세요.");
+      return false;
+    }
+    return true;
+  };
 
   return (
     <Modal
@@ -136,13 +183,61 @@ const AddTodoModal = ({ visible, onClose, onAddTodo, selectedDate }) => {
                   </View>
                 </View>
                 <Text style={styles.inputLabels}>카테고리</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  style={styles.categoryScroll}
+                >
+                  {Array.isArray(categoryList) &&
+                    categoryList.map((item) => (
+                      <TouchableOpacity
+                        key={item.id}
+                        onPress={() => setSelectedCategory(item)}
+                        style={[
+                          styles.categoryBox,
+                          {
+                            backgroundColor: categories[item.colorKey].bg,
+                            borderColor:
+                              selectedCategory?.id === item.id
+                                ? themeColors.highlight
+                                : "transparent",
+                          },
+                        ]}
+                      >
+                        <Text
+                          style={{
+                            color: categories[item.colorKey].text,
+                            fontWeight: "bold",
+                          }}
+                        >
+                          {item.name}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                </ScrollView>
               </View>
 
               <View style={styles.buttonRow}>
                 <TouchableOpacity onPress={onClose}>
                   <Text style={styles.cancelBtn}>취소</Text>
                 </TouchableOpacity>
-                <TouchableOpacity onPress={() => onAddTodo(/* todo 정보 */)}>
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!validateInputs()) return;
+
+                    const newTodo = {
+                      name: todoText,
+                      category: getCategoryTag(
+                        selectedCategory.name,
+                        selectedCategory.colorKey
+                      ),
+                      date: getISODate(todoYear, todoMonth, todoDate, 12),
+                    };
+
+                    onAddTodo(newTodo);
+                    onClose();
+                  }}
+                >
                   <Text style={styles.addBtn}>추가</Text>
                 </TouchableOpacity>
               </View>
@@ -247,6 +342,23 @@ const styles = StyleSheet.create({
   pickerItem: {
     fontSize: 18,
     textAlign: "center",
+  },
+  // 카테고리 목록 횡스크롤
+  categoryScroll: {
+    paddingTop: 10,
+    paddingLeft: 9,
+    marginBottom: 7,
+  },
+  // 각 카테고리 박스
+  categoryBox: {
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 15,
+    marginRight: 7,
+    borderWidth: 2,
+    // 텍스트 중앙 정렬
+    alignItems: "center",
+    justifyContent: "center",
   },
 
   // 취소 / 추가 버튼 컨테이너

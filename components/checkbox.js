@@ -1,10 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { TouchableOpacity, View, Text, StyleSheet } from "react-native";
 
 import { themeColors, categories, groups } from "../Colors";
 
-const CustomCheckbox = ({ color = "#7EB4BC", onToggle = () => {} }) => {
-  const [checked, setChecked] = useState(false);
+const CustomCheckbox = ({
+  color = "#7EB4BC",
+  onToggle = () => {},
+  uuid,
+  initialChecked,
+}) => {
+  const [checked, setChecked] = useState(initialChecked);
+
+  useEffect(() => {
+    setChecked(initialChecked);
+  }, [initialChecked]);
 
   const handlePress = () => {
     const newValue = !checked;
